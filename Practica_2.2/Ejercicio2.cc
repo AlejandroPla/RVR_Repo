@@ -57,21 +57,19 @@ main (int argc, char **argv)
 
 		getnameinfo(&client_addr, client_len, host, NI_MAXHOST, service, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
 
+		printf("%d bytes de %s:%s\n", bytes, host, service);
 		if (buffer[0] == 't') {
 			local = localtime(&t);
 			ssize_t s = strftime(MY_TIME, sizeof(MY_TIME), "%H:%M:%S %p", local);
-			sendto(sd, MY_TIME, sizeof(char) * s, 0, &client_addr, client_len); 
-			printf("%d bytes de %s:%s\n", bytes, host, service);
+			sendto(sd, MY_TIME, sizeof(char) * s, 0, &client_addr, client_len);
 		} else
 		if (buffer[0] == 'd') {
 			local = localtime(&t);
 			ssize_t s = strftime(MY_TIME, sizeof(MY_TIME), "%Y-%m-%d", local);
 			sendto(sd, MY_TIME, sizeof(char) * s, 0, &client_addr, client_len);
-			printf("%d bytes de %s:%s\n", bytes, host, service);
 		} else 
 		if (buffer[0] == 'q') {
 			printf("Saliendo...\n");
-			shutdown(sd, 2);
 			return 0;
 		} else {
 			printf("Comando no soportado %s\n", buffer[0]);
