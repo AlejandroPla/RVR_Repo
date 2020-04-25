@@ -72,7 +72,7 @@ main (int argc, char **argv)
 			printf("Saliendo...\n");
 			return 0;
 		} else {
-			printf("Comando no soportado %s\n", buffer[0]);
+			printf("Comando no soportado %s", buffer);
 		}
 	}
 	
