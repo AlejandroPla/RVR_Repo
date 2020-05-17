@@ -85,4 +85,8 @@ int main(int argc, char **argv)
     printf("REAL: %s %d %d\n\n", one_r.name, one_r.x, one_r.y);
 
     return 0;
+	
+	// Pregunta 1: el comando od muestra en consola el archivo binario con otro formato
+	// Pregunta 2: la salida es la representación en consola de los datos que se han
+	//             serializado en binario en el método to_bin()
 }
