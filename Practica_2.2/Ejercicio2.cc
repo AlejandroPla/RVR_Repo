@@ -1,6 +1,8 @@
 #include "Serializable.h"
 
 #include <iostream>
+#include <fstream>
+
 #include <string>
 
 #include <sys/types.h>
@@ -21,37 +23,37 @@ public:
 
     void to_bin()
     {
-		alloc_data(sizeof(name) + sizeof(x) + sizeof(y));
-		char* tmp = _data;
-		memcpy(tmp, (void*)&name, sizeof(name));
-		tmp += sizeof(name);
-		memcpy(tmp, (void*)&x, sizeof(x));
-		tmp += sizeof(x);
-		memcpy(tmp, (void*)&y, sizeof(y));
+	alloc_data(sizeof(name) + sizeof(x) + sizeof(y));
+	
+	char* tmp = _data;
+	
+	memcpy(tmp, name, sizeof(name));
+	tmp += sizeof(name);
+
+	memcpy(tmp, &x, sizeof(x));
+	tmp += sizeof(x);
+
+	memcpy(tmp, &y, sizeof(y));
     }
 
     int from_bin(char * data)
     {
-		char* tmp = _data;
-		memcpy((void*)&name, tmp, sizeof(name));
-		tmp += sizeof(name);
-		memcpy((void*)&x, tmp, sizeof(x));
-		tmp += sizeof(x);
-		memcpy((void*)&y, tmp, sizeof(y));
-        return 0;
+        char* tmp = data;
+
+	memcpy(name, tmp, sizeof(name));
+	tmp += sizeof(name);
+
+	memcpy(&x, tmp, sizeof(x));
+	tmp += sizeof(x);
+	
+        memcpy(&y, tmp, sizeof(y));
+
+	return 0;
     }
 
-	char * getdata() {
-		return _data;
-	}
-
-	int32_t getsize() {
-		return _size;
-	}
-
-
 public:
-    char name[80];
+    static const size_t MAX_NAME = 80;
+    char name[MAX_NAME];
 
     int16_t x;
     int16_t y;
@@ -62,22 +64,25 @@ int main(int argc, char **argv)
     Jugador one_r("", 0, 0);
     Jugador one_w("Player_ONE", 123, 987);
 
-    //Serializar y escribir one_w en un fichero
-	one_w.to_bin();
+    // Serializar y escribir one_w en un fichero
+    one_w.to_bin(); 
 
-	// WIP
-	FILE *file = fopen("one_w.bin","wb");
-	fwrite(one_w.getdata(), sizeof(one_w.getdata()), 1, file);
+    int fileWrite = open(one_w.name, O_CREAT | O_WRONLY);
+    write(fileWrite, one_w.data(), one_w.size());
+    close(fileWrite);
 
-    //Leer el fichero en un buffer y "deserializar" en one_r
-	one_w.from_bin(one_w.getdata());
+    // Leer el fichero en un buffer y des-serializar en one_r
+    char buffer[one_w.size()];
+   
+    int fileRead = open(one_w.name, O_RDONLY);
+    
+    read(fileRead, buffer, one_w.size());
+    close(fileRead);
 
-	char* buffer;
-	fread(buffer, sizeof(one_w.getdata()), 1, file);
-
+    one_r.from_bin(buffer);
+    
     //Mostrar el contenido one_r
-	printf("REAL: %s %d %d\n", one_w.name, one_w.x, one_w.y);
-	printf("DE FICHERO: %s\n", buffer);
-	
+    printf("REAL: %s %d %d\n\n", one_r.name, one_r.x, one_r.y);
+
     return 0;
 }
