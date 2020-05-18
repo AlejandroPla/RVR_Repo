@@ -46,23 +46,28 @@ void ChatServer::do_messages()
 		switch(message.type) {
 			case 0:
 			clients.push_back(sdMessage);
-			login();
 			break;
 
 			case 1:
-			for (auto s : clients) {
+			for (Socket* s = clients.begin(); s != clients.end(); s++) {
 				if (s != sdMessage) {
-					socket.send(message, s);
+					socket.send(message, *s);
 				}
 			}
 			break;
 
 			case 2:
-			logout(); // al parecer el metodo esta vacio
-			break;
+			int i;
+			i = 0;
+			bool encontrado;
+			encontrado = false;
 			
-			default:
-			printf("Invalid message type\n");
+			while (!encontrado && i != clients.size()) {
+				if (clients[i] == sdMessage) {
+					encontrado = true;
+					clients.erase(clients.begin() + i);
+				}
+			}
 			break;
 		}
     }
@@ -80,7 +85,12 @@ void ChatClient::login()
 
 void ChatClient::logout()
 {
-	
+	std::string msg;
+
+    ChatMessage em(nick, msg);
+    em.type = ChatMessage::LOGOUT;
+
+    socket.send(em, socket);
 }
 
 void ChatClient::input_thread()
@@ -89,6 +99,13 @@ void ChatClient::input_thread()
     {
         // Leer stdin con std::getline
         // Enviar al servidor usando socket
+		std::string msg;
+		std::getline(std::cin, msg);
+
+		ChatMessage em(nick, msg);
+		em.type = ChatMessage::MESSAGE;
+		
+		socket.send(em, socket);
     }
 }
 
@@ -98,7 +115,10 @@ void ChatClient::net_thread()
     {		
         //Recibir Mensajes de red
         //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
-		printf("%s: %s\n", nick, message);
+		ChatMessage em;
+		socket.recv(em);		
+
+		std::cout << em.nick << ": " << em.message << "\n";
     }
 }
 
