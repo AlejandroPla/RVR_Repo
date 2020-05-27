@@ -1,56 +1,86 @@
 #include <string>
+
 #include <unistd.h>
+
 #include <string.h>
-#include "Chat.h"
 
 #include "XLDisplay.h"
 
-#include <string>
+#include "Chat.h"
 
-extern "C" void * _client_thread(void *arg)
+
+
+extern "C" void * draw_thread(void *arg)
+
 {
+
     ChatClient * server = static_cast<ChatClient *>(arg);
 
-    server->net_thread();
+
+
+    server->draw_character();
+
+
 
     return 0;
+
 }
 
-int main(int argc, char **argv)
+
+
+extern "C" void * input_thread(void *arg)
+
 {
+
+    ChatClient * server = static_cast<ChatClient *>(arg);
+
+
+
+    server->handleInput();
+
+
+
+    return 0;
+
+}
+
+
+
+int main(int argc, char **argv)
+
+{
+
     ChatClient ec(argv[1], argv[2], argv[3]);
 
+
+
     pthread_attr_t attr;
+
     pthread_t id;
 
+
+
     pthread_attr_init(&attr);
+
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-	pthread_create(&id, &attr, _client_thread, static_cast<void *>(&ec));
+
+
+    XLDisplay::init(500, 500, "Drone Duel");
+
+
 
     ec.login();
 
-    //ec.input_thread();
+    pthread_create(&id, &attr, draw_thread, static_cast<void *>(&ec));
 
-    std::cout << "ENTRA AL RENDERIZADO\n";
+    //pthread_create(&id, &attr, input_thread, static_cast<void *>(&ec));
 
-    // Renderizado
-    XLDisplay::init(600, 800, "Jugador1");
 
-    XLDisplay& dpy = XLDisplay::display();
 
-    ec.draw_character(45, 45, 15);
+    ec.handleInput();
 
-    char k;
-
-    do {
-        k = dpy.wait_key();
-        ec.update_position(k);
-    } while (ec.get_life() > 0 || k != 'q');
-
-    dpy.clear();
-
-    dpy.flush();
-
-    sleep(1);
 }
+
+
+
