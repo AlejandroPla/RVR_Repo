@@ -2,19 +2,20 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
+
 #include "Serializable.h"
 #include "Socket.h"
 #include "Chat.h"
 
-extern "C" void * update_thread(void *arg)
-{
-    ChatServer * server = static_cast<ChatServer *>(arg);
+extern "C" void * update_thread (void *arg) {
+    ChatServer * server = static_cast<ChatServer*>(arg);
+    
     server->update_clients();
+
     return 0;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     sigset_t waitset;
     int sig;
 
@@ -25,7 +26,7 @@ int main(int argc, char **argv)
 
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    pthread_create(&id, &attr, update_thread, static_cast<void *>(&es));    
+    pthread_create(&id, &attr, update_thread, static_cast<void *>(&es));
 
     es.do_messages();
 

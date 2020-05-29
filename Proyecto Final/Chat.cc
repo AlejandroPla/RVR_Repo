@@ -1,56 +1,80 @@
 #include "Chat.h"
-#include "XLDisplay.h"
+
 #include <algorithm>
 #include <string>
 #include <string.h>
 
-void ChatMessage::to_bin() 
-{
-    alloc_data(MESSAGE_SIZE);
+#include <iostream>
+#include <fstream>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "XLDisplay.h"
+
+// Game methods
+void Game::to_bin(){
+	alloc_data(MESSAGE_SIZE);
+
     memset(_data, 0, MESSAGE_SIZE);
+
 	char* dt = _data;
 
-    memcpy(dt, &type, sizeof(uint8_t));
-	dt += sizeof(uint8_t);
+	memcpy(dt, &player1->x, sizeof(player1->x));
+	dt += sizeof(player1->x);
 
-	for (unsigned int i = 0; i < 7 && i < nick.length(); i++, dt++) {
-	 *dt = nick[i];
-	}
+	memcpy(dt, &player1->y, sizeof(player1->y));
+	dt += sizeof(player1->y);
 
-	dt += 7 * sizeof(char);
+	memcpy(dt, &player2->x, sizeof(player2->x));
+	dt += sizeof(player2->x);
 
-	for (unsigned int i = 0; i < message.length(); i++, dt++) {
-	 *dt = message[i];
-	}
+	memcpy(dt, &player2->y, sizeof(player2->y));
+	dt += sizeof(player2->y);
 
-	dt = _data + sizeof(uint8_t) + 8* sizeof(char);
+	/*for (int i = 0; i < bullet.size(); i++) {
+		//memcpy(dt, &)
+	}*/
+
+	int fileWrite = open("Game_data", O_CREAT | O_WRONLY);
+    write(fileWrite, data(), size());
+    close(fileWrite);
 }
 
-int ChatMessage::from_bin(char * bobj)
-{
-    alloc_data(MESSAGE_SIZE);
+int Game::from_bin(char * data) {
+	alloc_data(MESSAGE_SIZE);
 
-    memcpy(static_cast<void *>(_data), bobj, MESSAGE_SIZE);
-
-	type = (uint8_t) *_data;
-
-	char * _nick = _data + sizeof(uint8_t);
-	char * _msg = _nick + sizeof(char) * 8;
-
-	std::string n(_nick, 8);
-	std::string m(_msg, 80);
+    memcpy(static_cast<void *>(_data), data, MESSAGE_SIZE);
 	
-	message = m;
-	nick = n;
+	player1->x = *_data + sizeof(int);
+	player1->y = *_data + sizeof(int);
+
+	player2->x = *_data + sizeof(int);
+	player2->y = *_data + sizeof(int);
 
     return 0;
-
 }
 
+void Game::draw() {
+	XLDisplay& dpy = XLDisplay::display();
 
+	// Linea central
+    dpy.set_color(XLDisplay::RED);
+    dpy.rectangle(250, 250, 500, 10);
 
-void ChatServer::do_messages()
-{
+    dpy.set_color(XLDisplay::BLUE);
+    dpy.circle(player1->x,player1->y, player1->size);
+
+    dpy.set_color(XLDisplay::GREEN);
+	dpy.circle(player2->x,player2->y, player2->size);
+
+	// TODO balas y lineas
+}
+
+// ChatServer methods
+void ChatServer::do_messages() {
     while (true)
     {
 	ChatMessage message;
@@ -66,45 +90,45 @@ void ChatServer::do_messages()
 				std::cout << "login: " << *sdMessage << "\n";
 			} else {
 				// TODO Enviar mensaje de que la sala esta llena
-				std::cout << *sdMessage << " tried to join but lobby is full\n";
+				/*message.message = "lobby is full\n";
+
+				socket.send(message, *sdMessage);
+				std::cout << *sdMessage << " tried to join but lobby is full\n";*/
 			}
 		break;
-		/*case ChatMessage::UPDATE:
-			for (auto it = clients.begin(); it != clients.end(); ++it) {
-				if(!(*(*it) == *sdMessage)) {
-					socket.send(message, *(*it));
-				}
-			}
-			std::cout << "message from: " << *sdMessage << "\n";
-		break;*/
+
 		case ChatMessage::MOVE_LEFT:
 			if (*(*it) == *sdMessage) {
-				player1->x -= 10;
+				game.player1->x -= 10;
 			} else {
-				player2->x -= 10;
+				game.player2->x -= 10;
 			}
 		break;
+
 		case ChatMessage::MOVE_RIGHT:
 			if (*(*it) == *sdMessage) {
-				player1->x += 10;
+				game.player1->x += 10;
 			} else {
-				player2->x += 10;
+				game.player2->x += 10;
 			}
 		break;
+
 		case ChatMessage::MOVE_UP:
 			if (*(*it) == *sdMessage) {
-				player1->y -= 10;
+				game.player1->y -= 10;
 			} else {
-				player2->y -= 10;
+				game.player2->y -= 10;
 			}
 		break;
+		
 		case ChatMessage::MOVE_DOWN:
 			if (*(*it) == *sdMessage) {
-				player1->y += 10;
+				game.player1->y += 10;
 			} else {
-				player2->y += 10;
+				game.player2->y += 10;
 			}
 		break;
+
 		case ChatMessage::LOGOUT:
 			int i;
 			i = 0;
@@ -123,32 +147,43 @@ void ChatServer::do_messages()
 			nPlayers--;
 		break;
 		}
-    }
+	}
 }
 
-void ChatServer::update_clients() {
-	// TODO: Serializar y enviar Game a los clientes 
+void ChatServer::update_clients()
+{
+	while(true) {
+		game.to_bin();
+		for (auto it = clients.begin(); it != clients.end(); ++it) {
+			//std::cout << "ENTRA A UPDATE CLIENTS\n";
+			socket.send(game, *(*it));
+		}
+	}
 }
 
 void ChatClient::login()
 {
-    std::string msg;
-    ChatMessage em(nick, msg);
-    em.type = ChatMessage::LOGIN;
-    socket.send(em, socket);
+	std::string msg;
+
+	ChatMessage em(nick, msg);
+	em.type = ChatMessage::LOGIN;
+
+	socket.send(em, socket);
 }
 
 void ChatClient::logout()
 {
 	std::string msg;
+
     ChatMessage em(nick, msg);
     em.type = ChatMessage::LOGOUT;
+
     socket.send(em, socket);
 }
-/*
+
 void ChatClient::input_thread()
 {
-    while (true)
+    /*while (true)
     {
         // Leer stdin con std::getline
         // Enviar al servidor usando socket
@@ -158,17 +193,18 @@ void ChatClient::input_thread()
 		if (msg == "q") {
 			ChatMessage em(nick, msg);
 			em.type = ChatMessage::LOGOUT;
+		
 			socket.send(em, socket);
 			break;
 		}
 		else {
 			ChatMessage em(nick, msg);
 			em.type = ChatMessage::MESSAGE;
+			
 			socket.send(em, socket);
 		}
-    }
+    }*/
 }
-*/
 
 void ChatClient::net_thread()
 {
@@ -176,25 +212,30 @@ void ChatClient::net_thread()
     {
 		ChatMessage em;
 		socket.recv(em);		
+
 		std::cout << em.nick << ": " << em.message << "\n";
     }
 }
 
 void ChatClient::update()
 {
-	// TODO esperar a recibir algo del servidor (recv)
-	Game game;
-	socket.recv(game);
-	
-	// TODO Deserializar el paquete
+	while (true) {
+		socket.recv(game);
+		
+		char buffer[game.getSize()];
 
-	// TODO Usar esos datos para repintar todo
-	XLDisplay& dpy = XLDisplay::display();
-	dpy.clear();
+		int fileRead = open("Game_data", O_RDONLY);
+		
+		read(fileRead, buffer, game.getSize());
+		close(fileRead);
 
-	//XLDisplay& dpy = XLDisplay::display();
-	//dpy.set_color(XLDisplay::RED);
-	//dpy.circle(x, y, size);
+		game.from_bin(buffer);
+
+		XLDisplay& dpy = XLDisplay::display();
+		dpy.clear();
+
+		game.draw();
+	}
 }
 
 void ChatClient::handleInput()
@@ -223,4 +264,3 @@ void ChatClient::handleInput()
 		}
     } while (k != 'q');
 }
-

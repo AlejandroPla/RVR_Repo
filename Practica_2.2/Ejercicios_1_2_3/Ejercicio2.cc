@@ -65,7 +65,7 @@ int main(int argc, char **argv)
     Jugador one_w("Player_ONE", 123, 987);
 
     // Serializar y escribir one_w en un fichero
-    one_w.to_bin(); 
+    one_w.to_bin();
 
     int fileWrite = open(one_w.name, O_CREAT | O_WRONLY);
     write(fileWrite, one_w.data(), one_w.size());

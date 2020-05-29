@@ -2,13 +2,16 @@
 #include <unistd.h>
 #include <string.h>
 #include <vector>
+
 #include "Serializable.h"
 #include "Socket.h"
+#include "XLDisplay.h"
 
 class Player {
 public:
     int x;
     int y;
+    int size = 50;
 
     Player(int n) {
         if (n = 1) {
@@ -25,6 +28,9 @@ public:
 
 class Bullet {
     Bullet(){}
+
+    int x;
+    int y;
 };
 
 class Game: public Serializable
@@ -32,11 +38,23 @@ class Game: public Serializable
 public:
     static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
 
-    Game(){};
-	
-    void to_bin() {};
+    Game() {
+        player1 = new Player(1);
+        player2 = new Player(2);
+    };
 
-    int from_bin(char * bobj) {};
+    void to_bin();
+
+    int from_bin(char * data);
+
+    void draw();
+
+    int getSize() { return _size; }
+
+    Player* player1;
+    Player* player2;
+
+    std::vector<Bullet*> bullets;
 };
 
 class ChatMessage: public Serializable
@@ -45,7 +63,7 @@ public:
     static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
 
     enum MessageType
-    {
+	{
         LOGIN   = 0,
         MOVE_LEFT = 1,
         MOVE_RIGHT = 2,
@@ -59,16 +77,14 @@ public:
 
     ChatMessage(const std::string& n, const std::string& m):nick(n),message(m){};
 
-    void to_bin();
+    void to_bin() {}
 
-    int from_bin(char * bobj);
+    int from_bin(char * bobj) {}
 
     uint8_t type;
 
     std::string nick;
-
     std::string message;
-
 };
 
 class ChatServer
@@ -77,7 +93,8 @@ public:
     ChatServer(const char * s, const char * p): socket(s, p)
     {
         socket.bind();
-    };    
+        game = Game();
+    };
 
     void do_messages();
 
@@ -86,27 +103,28 @@ public:
 private:
     std::vector<Socket *> clients;
     Socket socket;
-	
+    
     int nPlayers = 0;
-    Player* player1;
-    Player* player2;
-    std::vector<Bullet*> bullets;
+
+    Game game;
 };
 
-class ChatClient
-{
+class ChatClient {
 public:
-    ChatClient(const char * s, const char * p, const char * n):socket(s, p),
-        nick(n){};
+	ChatClient(const char * s, const char * p, const char * n):socket(s, p),
+        nick(n)
+        {
+            game = Game();
+        };
 
     void login();
 
     void logout();
 
     void input_thread();
-	
+
     void net_thread();
-	
+
     void draw_character();
 
     void handleInput();
@@ -114,7 +132,8 @@ public:
     void update();
 
 private:
-    Socket socket;
+    Game game;
+
+ 	Socket socket;
     std::string nick;
 };
-
