@@ -1,139 +1,145 @@
+#include "Chat.h"
+#include <algorithm>
 #include <string>
-#include <unistd.h>
 #include <string.h>
-#include <vector>
-
-#include "Serializable.h"
-#include "Socket.h"
 #include "XLDisplay.h"
 
-class Player {
-public:
-    int x;
-    int y;
-    int size = 50;
-
-    Player(int n) {
-        if (n = 1) {
-            x = 250;
-            y = 50;
-        }
-
-        if (n = 2) {
-            x = 250;
-            y = 450;
-        }
-    }
-};
-
-class Bullet {
-    Bullet(){}
-
-    int x;
-    int y;
-};
-
-class Game: public Serializable
+void ChatMessage::to_bin()
 {
-public:
-    static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
+    alloc_data(MESSAGE_SIZE);
+    memset(_data, 0, MESSAGE_SIZE);
+	char* dt = _data;
+	
+    memcpy(dt, &type, sizeof(uint8_t));
+	dt += sizeof(uint8_t);
+	
+	for (unsigned int i = 0; i < 7 && i < nick.length(); i++, dt++) {
+	 *dt = nick[i];
+	}
+	dt += 7 * sizeof(char);
+	
+	for (unsigned int i = 0; i < message.length(); i++, dt++) {
+	 *dt = message[i];
+	}
+	dt = _data + sizeof(uint8_t) + 8* sizeof(char);
+}
 
-    Game() {
-        player1 = new Player(1);
-        player2 = new Player(2);
-    };
-
-    void to_bin();
-
-    int from_bin(char * data);
-
-    void draw();
-
-    int getSize() { return _size; }
-
-    Player* player1;
-    Player* player2;
-
-    std::vector<Bullet*> bullets;
-};
-
-class ChatMessage: public Serializable
+int ChatMessage::from_bin(char * bobj)
 {
-public:
-    static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
+    alloc_data(MESSAGE_SIZE);
+    memcpy(static_cast<void *>(_data), bobj, MESSAGE_SIZE);
+	type = (uint8_t) *_data;
+	
+	char * _nick = _data + sizeof(uint8_t);
+	char * _msg = _nick + sizeof(char) * 8;
+	
+	std::string n(_nick, 8);
+	std::string m(_msg, 80);
+	
+	message = m;
+	nick = n;
+	
+    return 0;
+}
 
-    enum MessageType
-	{
-        LOGIN   = 0,
-        MOVE_LEFT = 1,
-        MOVE_RIGHT = 2,
-        MOVE_UP = 3,
-        MOVE_DOWN= 4,
-        SHOOT = 5,
-        LOGOUT  = 6
-    };
-
-    ChatMessage(){};
-
-    ChatMessage(const std::string& n, const std::string& m):nick(n),message(m){};
-
-    void to_bin() {}
-
-    int from_bin(char * bobj) {}
-
-    uint8_t type;
-
-    std::string nick;
-    std::string message;
-};
-
-class ChatServer
+void ChatServer::do_messages()
 {
-public:
-    ChatServer(const char * s, const char * p): socket(s, p)
+    while (true)
     {
-        socket.bind();
-        game = Game();
-    };
+	ChatMessage message;
+	Socket* sdMessage;
+	socket.recv(message, sdMessage);
+	
+	switch(message.type) {
+		case ChatMessage::LOGIN:
+			clients.push_back(sdMessage);
+			std::cout << "login: " << *sdMessage << "\n";
+		break;
+		case ChatMessage::MESSAGE:
+			for (auto it = clients.begin(); it != clients.end(); ++it) {
+				if(!(*(*it) == *sdMessage)) {
+					socket.send(*game, *(*it));
+				}
+			}
+			std::cout << "message from: " << *sdMessage << "\n";
+		break;
+		case ChatMessage::LOGOUT:
+			int i;
+			i = 0;
+			bool encontrado;
+			encontrado = false;
+			
+			while (!encontrado && i != clients.size()) {
+				if (clients[i] == sdMessage) {
+					encontrado = true;
+					clients.erase(clients.begin() + i);
+				}
+				else i++;
+			}
+			std::cout << "logout: " << *sdMessage << "\n";
+		break;
+		}
+    }
+}
 
-    void do_messages();
+void ChatClient::login()
+{
+    std::string msg;
+    ChatMessage em(nick, msg);
+    em.type = ChatMessage::LOGIN;
+    socket.send(em, socket);
+}
 
-    void update_clients();
+void ChatClient::logout()
+{
+	std::string msg;
+    ChatMessage em(nick, msg);
+    em.type = ChatMessage::LOGOUT;
+    socket.send(em, socket);
+}
 
-private:
-    std::vector<Socket *> clients;
-    Socket socket;
-    
-    int nPlayers = 0;
+void ChatClient::input_thread()
+{
+    while (true)
+    {
+		std::string msg;
+		std::getline(std::cin, msg);
+		if (msg == "q") {
+			ChatMessage em(nick, msg);
+			em.type = ChatMessage::LOGOUT;
+		
+			socket.send(em, socket);
+			break;
+		}
+		else {
+			ChatMessage em(nick, msg);
+			em.type = ChatMessage::MESSAGE;
+			
+			socket.send(em, socket);
+		}
+    }
+}
 
-    Game game;
-};
-
-class ChatClient {
-public:
-	ChatClient(const char * s, const char * p, const char * n):socket(s, p),
-        nick(n)
-        {
-            game = Game();
-        };
-
-    void login();
-
-    void logout();
-
-    void input_thread();
-
-    void net_thread();
-
-    void draw_character();
-
-    void handleInput();
-
-    void update();
-
-private:
-    Game game;
-
- 	Socket socket;
-    std::string nick;
-};
+void ChatClient::net_thread()
+{
+    while(true)
+    {
+        //Recibir Mensajes de red
+        //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
+		/*ChatMessage em;
+		socket.recv(em);		
+		std::cout << em.nick << ": " << em.message << "\n";*/
+		Game game(0, 0, 240, 240);
+		socket.recv(game);
+		//std::cout << game.x1 << " " 
+		//		  << game.y1 << " " 
+		//		  << game.x2 << " " 
+		//		  << game.y2 << "\n";
+		while (true) {
+			XLDisplay& dpy = XLDisplay::display();
+			dpy.set_color(XLDisplay::BLUE);
+			dpy.circle(game.x1, game.y1, 20);
+			dpy.circle(game.x2, game.y2, 20);
+		}
+    }
+}
