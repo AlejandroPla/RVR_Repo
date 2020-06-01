@@ -3,22 +3,14 @@
 #include <string>
 #include <string.h>
 #include "XLDisplay.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-
 void ChatMessage::to_bin()
 {
     alloc_data(MESSAGE_SIZE);
     memset(_data, 0, MESSAGE_SIZE);
 	char* dt = _data;
-	
     memcpy(dt, &type, sizeof(uint8_t));
 	dt += sizeof(uint8_t);
-	
-	for (unsigned int i = 0; i < 7 && i < nick.length(); i++, dt++) {
+		for (unsigned int i = 0; i < 7 && i < nick.length(); i++, dt++) {
 	 *dt = nick[i];
 	}
 	dt += 7 * sizeof(char);
@@ -27,10 +19,9 @@ void ChatMessage::to_bin()
 	}
 	dt = _data + sizeof(uint8_t) + 8* sizeof(char);
 }
-
 int ChatMessage::from_bin(char * bobj)
 {
-	alloc_data(MESSAGE_SIZE);
+    alloc_data(MESSAGE_SIZE);
     memcpy(static_cast<void *>(_data), bobj, MESSAGE_SIZE);
 	type = (uint8_t) *_data;
 	
@@ -42,10 +33,8 @@ int ChatMessage::from_bin(char * bobj)
 	
 	message = m;
 	nick = n;
-	
     return 0;
 }
-
 void ChatServer::do_messages()
 {
     while (true)
@@ -53,11 +42,55 @@ void ChatServer::do_messages()
 	ChatMessage message;
 	Socket* sdMessage;
 	socket.recv(message, sdMessage);
-
 	switch(message.type) {
+		case ChatMessage::UP:
+			if (message.nick == player1) {
+				game->y1 -= 10;
+			} else if (message.nick == player2) {
+				game->y2 -= 10;
+			}			
+		break;
+		case ChatMessage::DOWN:
+			if (message.nick == player1) {
+				game->y1 += 10;
+			} else if (message.nick == player2) {
+				game->y2 += 10;
+			}			
+		break;
+		case ChatMessage::LEFT:
+			if (message.nick == player1) {
+				game->x1 -= 10;
+			} else if (message.nick == player2) {
+				game->x2 -= 10;
+			}			
+		break;
+		case ChatMessage::RIGHT:
+			if (message.nick == player1) {
+				game->x1 += 10;
+			} else if (message.nick == player2) {
+				game->x2 += 10;
+			}			
+		break;
+		case ChatMessage::SHOOT:
+			if (message.nick == player1) {
+				std::cout << "PLAYER 1 SHOOTS\n";
+			} else if (message.nick == player2) {
+				std::cout << "PLAYER 2 SHOOTS\n";
+			}			
+		break;
 		case ChatMessage::LOGIN:
-			clients.push_back(sdMessage);
-			std::cout << "login: " << *sdMessage << "\n";
+			if (client1 == nullptr) {
+				client1 = sdMessage;
+				player1 = message.nick;
+				std::cout << "login as Player 1: " << *sdMessage << "\n";
+			} else if (client2 == nullptr) {
+				client2 = sdMessage;
+				player2 = message.nick;
+				std::cout << "login as Player 2: " << *sdMessage << "\n";
+			} else {
+				std::cout << *sdMessage << " tried to connect but lobby is full\n";
+			}
+			
 		break;
 		case ChatMessage::MESSAGE:
 			for (auto it = clients.begin(); it != clients.end(); ++it) {
@@ -72,7 +105,7 @@ void ChatServer::do_messages()
 			i = 0;
 			bool encontrado;
 			encontrado = false;
-
+			
 			while (!encontrado && i != clients.size()) {
 				if (clients[i] == sdMessage) {
 					encontrado = true;
@@ -85,7 +118,6 @@ void ChatServer::do_messages()
 		}
     }
 }
-
 void ChatClient::login()
 {
     std::string msg;
@@ -93,7 +125,6 @@ void ChatClient::login()
     em.type = ChatMessage::LOGIN;
     socket.send(em, socket);
 }
-
 void ChatClient::logout()
 {
 	std::string msg;
@@ -101,41 +132,50 @@ void ChatClient::logout()
     em.type = ChatMessage::LOGOUT;
     socket.send(em, socket);
 }
-
 void ChatClient::input_thread()
 {
-    while (true)
-    {
-		std::string msg;
-		std::getline(std::cin, msg);
-		if (msg == "q" || msg == "Q") {
-			ChatMessage em(nick, msg);
-			em.type = ChatMessage::LOGOUT;
-		
-			socket.send(em, socket);
+	char k;
+	ChatMessage em(nick, "null");
+	do {
+		XLDisplay& dpy = XLDisplay::display();
+        k = dpy.wait_key();
+        switch(k) {
+			case 'w':
+				em.type = ChatMessage::UP;
+				socket.send(em, socket);
+			break;
+			case 'a':
+				em.type = ChatMessage::LEFT;
+				socket.send(em, socket);
+			break;
+			case 's':
+				em.type = ChatMessage::DOWN;
+				socket.send(em, socket);
+			break;
+			case 'd':
+				em.type = ChatMessage::RIGHT;
+				socket.send(em, socket);
+			break;
+			case ' ':
+				em.type = ChatMessage::SHOOT;
+				socket.send(em, socket);
 			break;
 		}
-		else {
-			ChatMessage em(nick, msg);
-			em.type = ChatMessage::MESSAGE;
-			
-			socket.send(em, socket);
-		}
-    }
+    } while (k != 'q');
 }
-
 void ChatClient::net_thread()
 {
     while(true)
     {
 		Game game(0, 0, 500, 500);
 		socket.recv(game);
-		
-		while (true) {
-			XLDisplay& dpy = XLDisplay::display();
-			dpy.set_color(XLDisplay::BLUE);
-			dpy.circle(game.x1, game.y1, 20);
-			dpy.circle(game.x2, game.y2, 20);
-		}
+		XLDisplay& dpy = XLDisplay::display();
+		//dpy.clear();
+		dpy.set_color(XLDisplay::BLUE);
+		dpy.circle(game.x1, game.y1, 20);
+		dpy.set_color(XLDisplay::GREEN);
+		dpy.circle(game.x2, game.y2, 20);
+		dpy.set_color(XLDisplay::RED);
+		dpy.line(0, 250, 500, 250);
     }
 }
