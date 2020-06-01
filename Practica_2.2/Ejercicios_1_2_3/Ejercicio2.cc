@@ -46,7 +46,7 @@ public:
 	memcpy(&x, tmp, sizeof(x));
 	tmp += sizeof(x);
 	
-        memcpy(&y, tmp, sizeof(y));
+    memcpy(&y, tmp, sizeof(y));
 
 	return 0;
     }

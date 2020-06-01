@@ -4,6 +4,11 @@
 #include <string.h>
 #include "XLDisplay.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 void ChatMessage::to_bin()
 {
     alloc_data(MESSAGE_SIZE);
@@ -25,7 +30,7 @@ void ChatMessage::to_bin()
 
 int ChatMessage::from_bin(char * bobj)
 {
-    alloc_data(MESSAGE_SIZE);
+	alloc_data(MESSAGE_SIZE);
     memcpy(static_cast<void *>(_data), bobj, MESSAGE_SIZE);
 	type = (uint8_t) *_data;
 	
@@ -103,7 +108,7 @@ void ChatClient::input_thread()
     {
 		std::string msg;
 		std::getline(std::cin, msg);
-				if (msg == "q") {
+		if (msg == "q" || msg == "Q") {
 			ChatMessage em(nick, msg);
 			em.type = ChatMessage::LOGOUT;
 		
@@ -128,8 +133,21 @@ void ChatClient::net_thread()
 		/*ChatMessage em;
 		socket.recv(em);		
 		std::cout << em.nick << ": " << em.message << "\n";*/
-		Game game(0, 0, 240, 240);
-		socket.recv(game);
+		Game game(10, 10, 240, 240);
+		Socket* game_socket;
+
+		game.to_bin();
+		int fileWrite = open("Game_Data", O_CREAT | O_WRONLY);
+		write(fileWrite, game.data(), game.size());
+		close(fileWrite);
+
+		char tmp[game.size()];
+
+		int fileRead = open("Game_Data", O_RDONLY);
+		close(fileRead);
+
+		game.from_bin(tmp);
+
 		//std::cout << game.x1 << " " 
 		//		  << game.y1 << " " 
 		//		  << game.x2 << " " 
@@ -138,7 +156,11 @@ void ChatClient::net_thread()
 			XLDisplay& dpy = XLDisplay::display();
 			dpy.set_color(XLDisplay::BLUE);
 			dpy.circle(game.x1, game.y1, 20);
+
+			dpy.set_color(XLDisplay::GREEN);
 			dpy.circle(game.x2, game.y2, 20);
 		}
+
+		socket.recv(game, game_socket);
     }
 }

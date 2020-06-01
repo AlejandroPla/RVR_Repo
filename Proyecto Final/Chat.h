@@ -8,34 +8,62 @@
 class Game : public Serializable {
 public:
     static const size_t SIZE = sizeof(uint8_t) * 4;
-    uint8_t x1;
-    uint8_t y1;
-    int x2;
-    int y2;
+    uint8_t x1 = -1;
+    uint8_t y1 = -1;
+    uint8_t x2 = -1;
+    uint8_t y2 = -1;
 	
     Game(uint8_t _x1, uint8_t _y1, uint8_t _x2, uint8_t _y2) {
         x1 = _x1;
         y1 = _y1;
         x2 = _x2;
         y2 = _y2;
-        std::cout << x1 << "\n";
     };
 	
     void to_bin() {
-        alloc_data(sizeof(uint8_t));
-        memset(_data, 0, sizeof(uint8_t));
+        alloc_data(SIZE);
+
+        memset(_data, 0, SIZE);
+
         char* dt = _data;
-        memcpy(dt, &x1, sizeof(uint8_t));
+        
+        memcpy(dt, static_cast<void*>(&x1), sizeof(uint8_t));
         dt += sizeof(uint8_t);
-        dt = _data + (sizeof(uint8_t));
+        
+        memcpy(dt, static_cast<void*>(&y1), sizeof(uint8_t));
+        dt += sizeof(uint8_t);
+
+        memcpy(dt, static_cast<void*>(&x2), sizeof(uint8_t));
+        dt += sizeof(uint8_t);
+
+        memcpy(dt, static_cast<void*>(&y2), sizeof(uint8_t));
+
+        printf("Posicion x1: %d \n ", x1);
+        printf("Posicion y1: %d \n ", y1);
+        printf("Posicion x2: %d \n ", x2);
+        printf("Posicion y2: %d \n ", y2);
     }
 
-    int from_bin(char * bobj) {
-        alloc_data(sizeof(uint8_t));
-        std::cout << x1 << "\n";
-        memcpy(static_cast<void *>(_data), bobj, sizeof(uint8_t));
-        x1 = (uint8_t) *_data;
-        std::cout << x1 << "\n";
+    int from_bin(char * dt) {
+        //memcpy(static_cast<void*>(_data), dt, SIZE);
+        dt = _data;
+
+        memcpy(static_cast<void*>(&x1), dt, sizeof(uint8_t));
+        dt += sizeof(uint8_t);
+        
+        memcpy(static_cast<void*>(&y1), dt, sizeof(uint8_t));
+        dt += sizeof(uint8_t);
+
+        memcpy(static_cast<void*>(&x2), dt, sizeof(uint8_t));
+        dt += sizeof(uint8_t);
+
+        memcpy(static_cast<void*>(&y2), dt, sizeof(uint8_t));
+
+        printf("Posicion x1: %d \n ", x1);
+        printf("Posicion y1: %d \n ", y1);
+        printf("Posicion x2: %d \n ", x2);
+        printf("Posicion y2: %d \n ", y2);
+        
         return 0;
     };
 };
@@ -94,4 +122,6 @@ public:
 private:
     Socket socket;
     std::string nick;
+
+    //Game game;
 };
