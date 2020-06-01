@@ -21,49 +21,29 @@ public:
     };
 	
     void to_bin() {
-        alloc_data(SIZE);
-
-        memset(_data, 0, SIZE);
-
+        alloc_data(sizeof(int16_t) * 4);
         char* dt = _data;
-        
-        memcpy(dt, static_cast<void*>(&x1), sizeof(uint8_t));
-        dt += sizeof(uint8_t);
-        
-        memcpy(dt, static_cast<void*>(&y1), sizeof(uint8_t));
-        dt += sizeof(uint8_t);
 
-        memcpy(dt, static_cast<void*>(&x2), sizeof(uint8_t));
-        dt += sizeof(uint8_t);
-
-        memcpy(dt, static_cast<void*>(&y2), sizeof(uint8_t));
-
-        printf("Posicion x1: %d \n ", x1);
-        printf("Posicion y1: %d \n ", y1);
-        printf("Posicion x2: %d \n ", x2);
-        printf("Posicion y2: %d \n ", y2);
+        memcpy(dt, &x1, sizeof(int16_t));   
+        dt += sizeof(int16_t); 
+        memcpy(dt, &y1, sizeof(int16_t)); 
+        dt += sizeof(int16_t); 
+        memcpy(dt, &x2, sizeof(int16_t)); 
+        dt += sizeof(int16_t); 
+        memcpy(dt, &y2, sizeof(int16_t)); 
     }
 
-    int from_bin(char * dt) {
-        //memcpy(static_cast<void*>(_data), dt, SIZE);
-        dt = _data;
 
-        memcpy(static_cast<void*>(&x1), dt, sizeof(uint8_t));
-        dt += sizeof(uint8_t);
-        
-        memcpy(static_cast<void*>(&y1), dt, sizeof(uint8_t));
-        dt += sizeof(uint8_t);
 
-        memcpy(static_cast<void*>(&x2), dt, sizeof(uint8_t));
-        dt += sizeof(uint8_t);
-
-        memcpy(static_cast<void*>(&y2), dt, sizeof(uint8_t));
-
-        printf("Posicion x1: %d \n ", x1);
-        printf("Posicion y1: %d \n ", y1);
-        printf("Posicion x2: %d \n ", x2);
-        printf("Posicion y2: %d \n ", y2);
-        
+    int from_bin(char * bobj) {
+        memcpy(&x1, bobj, sizeof(int16_t));
+        bobj += sizeof(int16_t);
+        memcpy(&y1, bobj, sizeof(int16_t));
+        bobj += sizeof(int16_t);
+        memcpy(&x2, bobj, sizeof(int16_t));
+        bobj += sizeof(int16_t);
+        memcpy(&y2, bobj, sizeof(int16_t));
+		
         return 0;
     };
 };

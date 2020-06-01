@@ -127,40 +127,15 @@ void ChatClient::input_thread()
 void ChatClient::net_thread()
 {
     while(true)
-	{
-        //Recibir Mensajes de red
-        //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
-		/*ChatMessage em;
-		socket.recv(em);		
-		std::cout << em.nick << ": " << em.message << "\n";*/
-		Game game(10, 10, 240, 240);
-		Socket* game_socket;
-
-		game.to_bin();
-		int fileWrite = open("Game_Data", O_CREAT | O_WRONLY);
-		write(fileWrite, game.data(), game.size());
-		close(fileWrite);
-
-		char tmp[game.size()];
-
-		int fileRead = open("Game_Data", O_RDONLY);
-		close(fileRead);
-
-		game.from_bin(tmp);
-
-		//std::cout << game.x1 << " " 
-		//		  << game.y1 << " " 
-		//		  << game.x2 << " " 
-		//		  << game.y2 << "\n";
+    {
+		Game game(0, 0, 500, 500);
+		socket.recv(game);
+		
 		while (true) {
 			XLDisplay& dpy = XLDisplay::display();
 			dpy.set_color(XLDisplay::BLUE);
 			dpy.circle(game.x1, game.y1, 20);
-
-			dpy.set_color(XLDisplay::GREEN);
 			dpy.circle(game.x2, game.y2, 20);
 		}
-
-		socket.recv(game, game_socket);
     }
 }
