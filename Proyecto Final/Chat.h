@@ -4,19 +4,37 @@
 #include <vector>
 #include "Serializable.h"
 #include "Socket.h"
+#include "XLDisplay.h"
 class Game : public Serializable {
 public:
     static const size_t SIZE = sizeof(int16_t) * 4;
-    int16_t x1;
-    int16_t y1;
-    int16_t x2;
-    int16_t y2;
-    Game(int16_t _x1, int16_t _y1, int16_t _x2, int16_t _y2) {
-        x1 = _x1;
-        y1 = _y1;
-        x2 = _x2;
-        y2 = _y2;
-    };
+    int16_t x1 = 250;
+    int16_t y1 = 50;
+    int16_t x2 = 250;
+    int16_t y2 = 450;
+    int16_t playerRadius = 20;
+    Game() {};
+    int movePlayer(bool player, int16_t x, int16_t y) {
+        if (!player) {  // Jugador 1
+            if (y1 + y + playerRadius >= 250) {
+                // El jugador 1 pierde
+            } else {
+                // TODO: Comprobar y limitar movimiento hacia arriba
+                // TODO: Comprobar y limitar movimiento hacia abajo
+                // TODO: Comprobar y limitar movimiento hacia la izquierda
+                // TODO: Comprobar y limitar movimiento hacia la derecha
+            }
+        } else {    // Jugador 2
+            if (y2 + y - playerRadius <= 250) {
+                // El jugador 2 pierde
+            } else {
+                // TODO: Comprobar y limitar movimiento hacia arriba
+                // TODO: Comprobar y limitar movimiento hacia abajo
+                // TODO: Comprobar y limitar movimiento hacia la izquierda
+                // TODO: Comprobar y limitar movimiento hacia la derecha
+            }
+        }
+    }
     void to_bin() {
         alloc_data(SIZE);
         char* dt = _data;
@@ -45,22 +63,20 @@ public:
 static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
     enum MessageType
     {
-        LOGIN   = 0,
-        MESSAGE = 1,
-        LOGOUT  = 2,
-        UP  = 3,
-        DOWN  = 4,
-        LEFT  = 5,
-        RIGHT  = 6,
-        SHOOT  = 7
+        LOGIN = 0,
+        LOGOUT = 1,
+        UP = 2,
+        DOWN = 3,
+        LEFT = 4,
+        RIGHT = 5,
+        SHOOT = 6
     };
     ChatMessage(){};
-    ChatMessage(const std::string& n, const std::string& m):nick(n),message(m){};
+    ChatMessage(const std::string& n) : nick(n) {};
     void to_bin();
     int from_bin(char * bobj);
     uint8_t type;
     std::string nick;
-    std::string message;
 };
 class ChatServer
 {
@@ -68,11 +84,12 @@ public:
     ChatServer(const char * s, const char * p): socket(s, p)
     {
         socket.bind();
-        game = new Game(250, 50, 250, 450);
+        game = new Game();
     };
     void do_messages();
     void update_thread() {
         while(true) {
+            usleep(10000);
             if (client1 != nullptr) {
                 socket.send(*game, *client1);
             }
@@ -82,24 +99,29 @@ public:
         }
     }
 private:
-    std::vector<Socket *> clients;
+    Socket socket;
+    Game* game;
     Socket* client1 = nullptr;
     Socket* client2 = nullptr;
-    Socket socket;
     std::string player1;
     std::string player2;
-    Game* game;
 };
 class ChatClient
 {
 public:
-    ChatClient(const char * s, const char * p, const char * n):socket(s, p),
-        nick(n){};
+    ChatClient(const char * s, const char * p, const char * n)
+    : socket(s, p), nick(n) {
+        game = new Game();
+        dpy = &XLDisplay::display();
+    };
     void login();
     void logout();
     void input_thread();
     void net_thread();
-    private:
+private:
     Socket socket;
     std::string nick;
+    Game* game;
+    XLDisplay* dpy;
+    bool exit = false;
 };

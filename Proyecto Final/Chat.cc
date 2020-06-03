@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <string>
 #include <string.h>
-#include "XLDisplay.h"
 void ChatMessage::to_bin()
 {
     alloc_data(MESSAGE_SIZE);
@@ -10,14 +9,9 @@ void ChatMessage::to_bin()
 	char* dt = _data;
     memcpy(dt, &type, sizeof(uint8_t));
 	dt += sizeof(uint8_t);
-		for (unsigned int i = 0; i < 7 && i < nick.length(); i++, dt++) {
+	for (unsigned int i = 0; i < 7 && i < nick.length(); i++, dt++) {
 	 *dt = nick[i];
 	}
-	dt += 7 * sizeof(char);
-	for (unsigned int i = 0; i < message.length(); i++, dt++) {
-	 *dt = message[i];
-	}
-	dt = _data + sizeof(uint8_t) + 8* sizeof(char);
 }
 int ChatMessage::from_bin(char * bobj)
 {
@@ -26,12 +20,8 @@ int ChatMessage::from_bin(char * bobj)
 	type = (uint8_t) *_data;
 	
 	char * _nick = _data + sizeof(uint8_t);
-	char * _msg = _nick + sizeof(char) * 8;
 	
 	std::string n(_nick, 8);
-	std::string m(_msg, 80);
-	
-	message = m;
 	nick = n;
     return 0;
 }
@@ -39,106 +29,93 @@ void ChatServer::do_messages()
 {
     while (true)
     {
-	ChatMessage message;
-	Socket* sdMessage;
-	socket.recv(message, sdMessage);
-	switch(message.type) {
-		case ChatMessage::UP:
-			if (message.nick == player1) {
-				game->y1 -= 10;
-			} else if (message.nick == player2) {
-				game->y2 -= 10;
-			}			
-		break;
-		case ChatMessage::DOWN:
-			if (message.nick == player1) {
-				game->y1 += 10;
-			} else if (message.nick == player2) {
-				game->y2 += 10;
-			}			
-		break;
-		case ChatMessage::LEFT:
-			if (message.nick == player1) {
-				game->x1 -= 10;
-			} else if (message.nick == player2) {
-				game->x2 -= 10;
-			}			
-		break;
-		case ChatMessage::RIGHT:
-			if (message.nick == player1) {
-				game->x1 += 10;
-			} else if (message.nick == player2) {
-				game->x2 += 10;
-			}			
-		break;
-		case ChatMessage::SHOOT:
-			if (message.nick == player1) {
-				std::cout << "PLAYER 1 SHOOTS\n";
-			} else if (message.nick == player2) {
-				std::cout << "PLAYER 2 SHOOTS\n";
-			}			
-		break;
-		case ChatMessage::LOGIN:
-			if (client1 == nullptr) {
-				client1 = sdMessage;
-				player1 = message.nick;
-				std::cout << "login as Player 1: " << *sdMessage << "\n";
-			} else if (client2 == nullptr) {
-				client2 = sdMessage;
-				player2 = message.nick;
-				std::cout << "login as Player 2: " << *sdMessage << "\n";
-			} else {
-				std::cout << *sdMessage << " tried to connect but lobby is full\n";
-			}
-			
-		break;
-		case ChatMessage::MESSAGE:
-			for (auto it = clients.begin(); it != clients.end(); ++it) {
-				if(!(*(*it) == *sdMessage)) {
-					socket.send(*game, *(*it));
+		ChatMessage message;
+		Socket* sdMessage;
+		socket.recv(message, sdMessage);
+		// TODO: Sustituir los movimientos por llamadas a game->movePlayer()
+		switch(message.type) {
+			case ChatMessage::UP:
+				if (message.nick == player1) {
+					game->y1 -= 10;
+				} else if (message.nick == player2) {
+					game->y2 -= 10;
+				}			
+			break;
+			case ChatMessage::DOWN:
+				if (message.nick == player1) {
+					game->y1 += 10;
+				} else if (message.nick == player2) {
+					game->y2 += 10;
+				}			
+			break;
+			case ChatMessage::LEFT:
+				if (message.nick == player1) {
+					game->x1 -= 10;
+				} else if (message.nick == player2) {
+					game->x2 -= 10;
+				}			
+			break;
+			case ChatMessage::RIGHT:
+				if (message.nick == player1) {
+					game->x1 += 10;
+				} else if (message.nick == player2) {
+					game->x2 += 10;
+				}			
+			break;
+			case ChatMessage::SHOOT:
+				if (message.nick == player1) {
+					std::cout << "PLAYER 1 SHOOTS\n";
+				} else if (message.nick == player2) {
+					std::cout << "PLAYER 2 SHOOTS\n";
+				}			
+			break;
+			case ChatMessage::LOGIN:
+				if (client1 == nullptr) {
+					client1 = sdMessage;
+					player1 = message.nick;
+					std::cout << "Player 1 (" << *sdMessage << ") logged in\n";
+				} else if (client2 == nullptr) {
+					client2 = sdMessage;
+					player2 = message.nick;
+					std::cout << "Player 2 (" << *sdMessage << ") logged in\n";
+				} else {
+					std::cout << *sdMessage << " tried to connect but lobby is full\n";
 				}
-			}
-			std::cout << "message from: " << *sdMessage << "\n";
-		break;
-		case ChatMessage::LOGOUT:
-			int i;
-			i = 0;
-			bool encontrado;
-			encontrado = false;
-			
-			while (!encontrado && i != clients.size()) {
-				if (clients[i] == sdMessage) {
-					encontrado = true;
-					clients.erase(clients.begin() + i);
+			break;
+			case ChatMessage::LOGOUT:
+				if(message.nick == player1) {
+					client1 = nullptr;
+					player1 = "";
+					std::cout << "Player 1 (" << *sdMessage << ") logged out\n";
+				} else if(message.nick == player2) {
+					client2 = nullptr;
+					player2 = "";
+					std::cout << "Player 2 (" << *sdMessage << ") logged out\n";
 				}
-				else i++;
-			}
-			std::cout << "logout: " << *sdMessage << "\n";
-		break;
+			break;
 		}
     }
 }
 void ChatClient::login()
 {
     std::string msg;
-    ChatMessage em(nick, msg);
+    ChatMessage em(nick);
     em.type = ChatMessage::LOGIN;
     socket.send(em, socket);
 }
 void ChatClient::logout()
 {
 	std::string msg;
-    ChatMessage em(nick, msg);
+    ChatMessage em(nick);
     em.type = ChatMessage::LOGOUT;
     socket.send(em, socket);
 }
 void ChatClient::input_thread()
 {
 	char k;
-	ChatMessage em(nick, "null");
+	ChatMessage em(nick);
 	do {
-		XLDisplay& dpy = XLDisplay::display();
-        k = dpy.wait_key();
+        k = dpy->wait_key();
         switch(k) {
 			case 'w':
 				em.type = ChatMessage::UP;
@@ -160,22 +137,24 @@ void ChatClient::input_thread()
 				em.type = ChatMessage::SHOOT;
 				socket.send(em, socket);
 			break;
+			case 'q':
+				logout();
+				exit = true;
+			break;
 		}
-    } while (k != 'q');
+    } while (!exit);
 }
 void ChatClient::net_thread()
 {
-    while(true)
+    while(!exit)
     {
-		Game game(0, 0, 500, 500);
-		socket.recv(game);
-		XLDisplay& dpy = XLDisplay::display();
-		//dpy.clear();
-		dpy.set_color(XLDisplay::BLUE);
-		dpy.circle(game.x1, game.y1, 20);
-		dpy.set_color(XLDisplay::GREEN);
-		dpy.circle(game.x2, game.y2, 20);
-		dpy.set_color(XLDisplay::RED);
-		dpy.line(0, 250, 500, 250);
+		socket.recv(*game);
+		dpy->clear();
+		dpy->set_color(XLDisplay::BLUE);
+		dpy->circle(game->x1, game->y1, game->playerRadius);
+		dpy->set_color(XLDisplay::GREEN);
+		dpy->circle(game->x2, game->y2, game->playerRadius);
+		dpy->set_color(XLDisplay::RED);
+		dpy->line(0, 250, 500, 250);
     }
 }
