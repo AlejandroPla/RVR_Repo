@@ -63,11 +63,15 @@ void ChatServer::do_messages()
 			break;
 			case ChatMessage::SHOOT:
 				if (message.nick == player1) {
-					std::cout << "PLAYER 1 SHOOTS\n";
+					game->bullets.push_back(std::pair<int16_t, int16_t>(
+						game->x1, game->y1 + game->playerRadius + game->bulletRadius)
+					);
 				} else if (message.nick == player2) {
-					std::cout << "PLAYER 2 SHOOTS\n";
+					game->bullets.push_back(std::pair<int16_t, int16_t>(
+						game->x2, game->y2 - game->playerRadius - game->bulletRadius)
+					);
 				}			
-				break;
+			break;
 			case ChatMessage::LOGIN:
 				if (client1 == nullptr) {
 					client1 = sdMessage;
@@ -135,25 +139,34 @@ void ChatClient::input_thread()
 			case ' ':
 				em.type = ChatMessage::SHOOT;
 				socket.send(em, socket);
-				break;
+			break;
 			case 'q':
 				logout();
 				exit = true;
 			break;
 		}
-    } while (!game->check_game_conditions());
+    } while (!exit);
 }
 void ChatClient::net_thread()
 {
-    while(!game->check_game_conditions())
+    while(!exit)
     {
 		socket.recv(*game);
 		dpy->clear();
+		// Players
 		dpy->set_color(XLDisplay::BLUE);
 		dpy->circle(game->x1, game->y1, game->playerRadius);
 		dpy->set_color(XLDisplay::GREEN);
 		dpy->circle(game->x2, game->y2, game->playerRadius);
+		// Middle line
 		dpy->set_color(XLDisplay::RED);
 		dpy->line(0, 250, 500, 250);
+		// Upper and lower limits
+		dpy->set_color(XLDisplay::BLACK);
+		dpy->line(0, game->upperLimit, 500, game->upperLimit);
+		dpy->line(0, game->lowerLimit, 500, game->lowerLimit);
+		for (int i = 0; i < game->bullets.size(); i++) {
+			dpy->circle(game->bullets[i].first, game->bullets[i].second, game->bulletRadius);
+		}
     }
 }

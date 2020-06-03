@@ -7,55 +7,62 @@
 #include "XLDisplay.h"
 class Game : public Serializable {
 public:
-    static const size_t SIZE = sizeof(int16_t) * 4;
+    static const size_t SIZE = sizeof(int16_t) * 7;
     int16_t x1 = 250;
     int16_t y1 = 50;
     int16_t x2 = 250;
     int16_t y2 = 450;
+    int16_t upperLimit = 5;
+    int16_t lowerLimit = 495;
     int16_t playerRadius = 20;
-
-    bool player_1_out_of_bounds = false;
-    bool player_2_out_of_bounds = false;
-
+    int16_t bulletRadius = 5;
+    int16_t bulletSpeed = 5;
+    std::vector<std::pair<int16_t, int16_t>> bullets;
     Game() {};
     void movePlayer(bool player, int16_t x, int16_t y) {
         if (!player) {  // Jugador 1
-            if (x > 0 && (x1 + x + playerRadius < 500)) {
+            if (x1 + x + playerRadius <= 500 && x1 + x - playerRadius >= 0) {
                 x1 += x;
             }
-            else if (x < 0 && x1 + x - playerRadius > 0) {
-                x1 += x;
-            }
-            else if (y < 0 && y1 + y - playerRadius > 0) {
+            if (y1 + y - playerRadius >= upperLimit) {
                 y1 += y;
-            }
-            else if (y > 0) {
-                y1 += y;
-                if (y1 + y + playerRadius >= 250) {
-                    player_1_out_of_bounds = true;
-                }
             }
         } else { // Jugador 2
-            if (x > 0 && (x2 + x + playerRadius < 500)) {
+            if (x2 + x + playerRadius <= 500 && x2 + x - playerRadius >= 0) {
                 x2 += x;
             }
-            else if (x < 0 && x2 + x - playerRadius > 0) {
-                x2 += x;
-            }
-            else if (y < 0) {
+            if (y2 + y + playerRadius <= lowerLimit) {
                 y2 += y;
             }
-            else if (y > 0 && y2 + y + playerRadius < 500) {
-                y2 += y;
-                if (y2 + y - playerRadius <= 250) {
-                    player_2_out_of_bounds = true;
-                    printf("out of bounds: %d\n", player_1_out_of_bounds);
+        }
+    }
+    void playerHit(bool player) {
+        if (!player) {
+            upperLimit += 50;
+            
+            // El limite empuja al jugador
+            if (y1 - playerRadius < upperLimit) {
+                y1 = upperLimit + playerRadius;
+                // El jugador pasa la linea del centro
+                if (y1 + playerRadius >= 250) {
+                    std::cout << "PIERDE EL JUGADOR 1\n";
+                }
+            }
+        } else {
+            lowerLimit -= 50;
+            // El limite empuja al jugador
+            if (y1 + playerRadius > lowerLimit) {
+                y1 = lowerLimit - playerRadius;
+                // El jugador pasa la linea del centro
+                if (y2 - playerRadius <= 250) {
+                    std::cout << "PIERDE EL JUGADOR 2\n";
                 }
             }
         }
     }
     void to_bin() {
-        alloc_data(SIZE);
+        size_t bulletsSize = bullets.size() * sizeof(int16_t) * 2;
+        alloc_data(SIZE + bulletsSize);
         char* dt = _data;
         memcpy(dt, &x1, sizeof(int16_t));                                          
         dt += sizeof(int16_t); 
@@ -63,7 +70,21 @@ public:
         dt += sizeof(int16_t); 
         memcpy(dt, &x2, sizeof(int16_t)); 
         dt += sizeof(int16_t); 
-        memcpy(dt, &y2, sizeof(int16_t)); 
+        memcpy(dt, &y2, sizeof(int16_t));
+        dt += sizeof(int16_t); 
+        memcpy(dt, &upperLimit, sizeof(int16_t)); 
+        dt += sizeof(int16_t); 
+        memcpy(dt, &lowerLimit, sizeof(int16_t));
+        dt += sizeof(int16_t);
+        
+        int16_t s = bullets.size();
+        memcpy(dt, &s, sizeof(int16_t));
+        for (int i = 0; i < bullets.size(); i++) {
+            dt += sizeof(int16_t); 
+            memcpy(dt, &bullets[i].first, sizeof(int16_t));
+            dt += sizeof(int16_t); 
+            memcpy(dt, &bullets[i].second, sizeof(int16_t));
+        }
     }
     int from_bin(char * bobj) {
         memcpy(&x1, bobj, sizeof(int16_t));
@@ -73,16 +94,24 @@ public:
         memcpy(&x2, bobj, sizeof(int16_t));
         bobj += sizeof(int16_t);
         memcpy(&y2, bobj, sizeof(int16_t));
+        bobj += sizeof(int16_t);
+        memcpy(&upperLimit, bobj, sizeof(int16_t));
+        bobj += sizeof(int16_t);
+        memcpy(&lowerLimit, bobj, sizeof(int16_t));
+        int16_t s;
+        bobj += sizeof(int16_t);
+        memcpy(&s, bobj, sizeof(int16_t));
+        for (int i = 0; i < s; i++) {
+            int16_t x;
+            int16_t y;
+            bobj += sizeof(int16_t); 
+            memcpy(&x, bobj, sizeof(int16_t));
+            bobj += sizeof(int16_t); 
+            memcpy(&y, bobj, sizeof(int16_t));
+            bullets.push_back(std::pair<int16_t, int16_t>(x, y));
+        }
         return 0;
     };
-    bool check_game_conditions() {
-        //printf("out of bounds: %d\n", player_1_out_of_bounds);
-        if (player_1_out_of_bounds) {
-            return true;
-        }
-
-        return false;
-    }
 };
 class ChatMessage: public Serializable
 {
@@ -125,7 +154,7 @@ public:
             }
         }
     }
-    private:
+private:
     Socket socket;
     Game* game;
     Socket* client1 = nullptr;
