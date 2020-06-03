@@ -32,34 +32,33 @@ void ChatServer::do_messages()
 		ChatMessage message;
 		Socket* sdMessage;
 		socket.recv(message, sdMessage);
-		// TODO: Sustituir los movimientos por llamadas a game->movePlayer()
 		switch(message.type) {
 			case ChatMessage::UP:
 				if (message.nick == player1) {
-					game->y1 -= 10;
+					game->movePlayer(false, 0, -10);
 				} else if (message.nick == player2) {
-					game->y2 -= 10;
+					game->movePlayer(true, 0, -10);
 				}			
-			break;
+				break;
 			case ChatMessage::DOWN:
 				if (message.nick == player1) {
-					game->y1 += 10;
+					game->movePlayer(false, 0, 10);
 				} else if (message.nick == player2) {
-					game->y2 += 10;
+					game->movePlayer(true, 0, 10);
 				}			
 			break;
 			case ChatMessage::LEFT:
 				if (message.nick == player1) {
-					game->x1 -= 10;
+					game->movePlayer(false, -10, 0);
 				} else if (message.nick == player2) {
-					game->x2 -= 10;
-				}			
-			break;
+					game->movePlayer(true, -10, 0);
+				}		
+				break;
 			case ChatMessage::RIGHT:
 				if (message.nick == player1) {
-					game->x1 += 10;
+					game->movePlayer(false, 10, 0);
 				} else if (message.nick == player2) {
-					game->x2 += 10;
+					game->movePlayer(true, 10, 0);
 				}			
 			break;
 			case ChatMessage::SHOOT:
@@ -68,7 +67,7 @@ void ChatServer::do_messages()
 				} else if (message.nick == player2) {
 					std::cout << "PLAYER 2 SHOOTS\n";
 				}			
-			break;
+				break;
 			case ChatMessage::LOGIN:
 				if (client1 == nullptr) {
 					client1 = sdMessage;
@@ -136,17 +135,17 @@ void ChatClient::input_thread()
 			case ' ':
 				em.type = ChatMessage::SHOOT;
 				socket.send(em, socket);
-			break;
+				break;
 			case 'q':
 				logout();
 				exit = true;
 			break;
 		}
-    } while (!exit);
+    } while (!game->check_game_conditions());
 }
 void ChatClient::net_thread()
 {
-    while(!exit)
+    while(!game->check_game_conditions())
     {
 		socket.recv(*game);
 		dpy->clear();

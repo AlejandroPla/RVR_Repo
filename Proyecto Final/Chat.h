@@ -13,25 +13,44 @@ public:
     int16_t x2 = 250;
     int16_t y2 = 450;
     int16_t playerRadius = 20;
+
+    bool player_1_out_of_bounds = false;
+    bool player_2_out_of_bounds = false;
+
     Game() {};
-    int movePlayer(bool player, int16_t x, int16_t y) {
+    void movePlayer(bool player, int16_t x, int16_t y) {
         if (!player) {  // Jugador 1
-            if (y1 + y + playerRadius >= 250) {
-                // El jugador 1 pierde
-            } else {
-                // TODO: Comprobar y limitar movimiento hacia arriba
-                // TODO: Comprobar y limitar movimiento hacia abajo
-                // TODO: Comprobar y limitar movimiento hacia la izquierda
-                // TODO: Comprobar y limitar movimiento hacia la derecha
+            if (x > 0 && (x1 + x + playerRadius < 500)) {
+                x1 += x;
             }
-        } else {    // Jugador 2
-            if (y2 + y - playerRadius <= 250) {
-                // El jugador 2 pierde
-            } else {
-                // TODO: Comprobar y limitar movimiento hacia arriba
-                // TODO: Comprobar y limitar movimiento hacia abajo
-                // TODO: Comprobar y limitar movimiento hacia la izquierda
-                // TODO: Comprobar y limitar movimiento hacia la derecha
+            else if (x < 0 && x1 + x - playerRadius > 0) {
+                x1 += x;
+            }
+            else if (y < 0 && y1 + y - playerRadius > 0) {
+                y1 += y;
+            }
+            else if (y > 0) {
+                y1 += y;
+                if (y1 + y + playerRadius >= 250) {
+                    player_1_out_of_bounds = true;
+                }
+            }
+        } else { // Jugador 2
+            if (x > 0 && (x2 + x + playerRadius < 500)) {
+                x2 += x;
+            }
+            else if (x < 0 && x2 + x - playerRadius > 0) {
+                x2 += x;
+            }
+            else if (y < 0) {
+                y2 += y;
+            }
+            else if (y > 0 && y2 + y + playerRadius < 500) {
+                y2 += y;
+                if (y2 + y - playerRadius <= 250) {
+                    player_2_out_of_bounds = true;
+                    printf("out of bounds: %d\n", player_1_out_of_bounds);
+                }
             }
         }
     }
@@ -56,6 +75,14 @@ public:
         memcpy(&y2, bobj, sizeof(int16_t));
         return 0;
     };
+    bool check_game_conditions() {
+        //printf("out of bounds: %d\n", player_1_out_of_bounds);
+        if (player_1_out_of_bounds) {
+            return true;
+        }
+
+        return false;
+    }
 };
 class ChatMessage: public Serializable
 {
@@ -98,7 +125,7 @@ public:
             }
         }
     }
-private:
+    private:
     Socket socket;
     Game* game;
     Socket* client1 = nullptr;
