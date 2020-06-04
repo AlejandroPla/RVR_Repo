@@ -18,9 +18,7 @@ int ChatMessage::from_bin(char * bobj)
     alloc_data(MESSAGE_SIZE);
     memcpy(static_cast<void *>(_data), bobj, MESSAGE_SIZE);
 	type = (uint8_t) *_data;
-	
 	char * _nick = _data + sizeof(uint8_t);
-	
 	std::string n(_nick, 8);
 	nick = n;
     return 0;
@@ -63,15 +61,17 @@ void ChatServer::do_messages()
 			break;
 			case ChatMessage::SHOOT:
 				if (message.nick == player1) {
-					game->bullets.push_back(std::pair<int16_t, int16_t>(
-						game->x1, game->y1 + game->playerRadius + game->bulletRadius)
-					);
+					std::cout << "player1 shoots\n";
+					int16_t x = game->x1;
+					int16_t y = game->y1 + game->playerRadius + game->bulletRadius;
+					Bullet bull(x, y);
+					game->bullets.push_back(bull);
 				} else if (message.nick == player2) {
-					game->bullets.push_back(std::pair<int16_t, int16_t>(
+					/*game->bullets.push_back(std::pair<int16_t, int16_t>(
 						game->x2, game->y2 - game->playerRadius - game->bulletRadius)
-					);
+					);*/
 				}			
-			break;
+				break;
 			case ChatMessage::LOGIN:
 				if (client1 == nullptr) {
 					client1 = sdMessage;
@@ -139,7 +139,7 @@ void ChatClient::input_thread()
 			case ' ':
 				em.type = ChatMessage::SHOOT;
 				socket.send(em, socket);
-			break;
+				break;
 			case 'q':
 				logout();
 				exit = true;
@@ -166,7 +166,13 @@ void ChatClient::net_thread()
 		dpy->line(0, game->upperLimit, 500, game->upperLimit);
 		dpy->line(0, game->lowerLimit, 500, game->lowerLimit);
 		for (int i = 0; i < game->bullets.size(); i++) {
-			dpy->circle(game->bullets[i].first, game->bullets[i].second, game->bulletRadius);
+            game->bullets[i].update_bullet();
+			if (game->bullets[i].check_collision(game->upperLimit, game->lowerLimit)) {
+				std::cout << "borrando\n";
+				game->bullets.erase(game->bullets.begin() + i);
+			} else {
+				dpy->circle(game->bullets[i].bullet_x, game->bullets[i].bullet_y, game->bulletRadius);
+			}
 		}
     }
 }
