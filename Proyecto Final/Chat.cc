@@ -18,7 +18,9 @@ int ChatMessage::from_bin(char * bobj)
     alloc_data(MESSAGE_SIZE);
     memcpy(static_cast<void *>(_data), bobj, MESSAGE_SIZE);
 	type = (uint8_t) *_data;
+	
 	char * _nick = _data + sizeof(uint8_t);
+	
 	std::string n(_nick, 8);
 	nick = n;
     return 0;
@@ -30,6 +32,7 @@ void ChatServer::do_messages()
 		ChatMessage message;
 		Socket* sdMessage;
 		socket.recv(message, sdMessage);
+		// TODO: Sustituir los movimientos por llamadas a game->movePlayer()
 		switch(message.type) {
 			case ChatMessage::UP:
 				if (message.nick == player1) {
@@ -60,20 +63,19 @@ void ChatServer::do_messages()
 				}			
 			break;
 			case ChatMessage::SHOOT:
+				int16_t x, y;
 				if (message.nick == player1) {
-					if(game->bullets.size() < 2) {
-						std::cout << "player1 shoots\n";
-						int16_t x = game->x1;
-						int16_t y = game->y1 + game->playerRadius + game->bulletRadius;
-						Bullet bull(x, y, 0);
-						game->bullets.push_back(bull);
-					}
+					x = game->x1;
+					y = game->y1 + game->playerRadius + game->bulletRadius;
+					Bullet b1(x, y, 0);
+					game->bullets.push_back(b1);
 				} else if (message.nick == player2) {
-					/*game->bullets.push_back(std::pair<int16_t, int16_t>(
-						game->x2, game->y2 - game->playerRadius - game->bulletRadius)
-					);*/
+					x = game->x2;
+					y = game->y2 - game->playerRadius - game->bulletRadius;
+					Bullet b2(x, y, 1);
+					game->bullets.push_back(b2);
 				}			
-				break;
+			break;
 			case ChatMessage::LOGIN:
 				if (client1 == nullptr) {
 					client1 = sdMessage;
@@ -141,7 +143,7 @@ void ChatClient::input_thread()
 			case ' ':
 				em.type = ChatMessage::SHOOT;
 				socket.send(em, socket);
-				break;
+			break;
 			case 'q':
 				logout();
 				exit = true;
@@ -168,11 +170,7 @@ void ChatClient::net_thread()
 		dpy->line(0, game->upperLimit, 500, game->upperLimit);
 		dpy->line(0, game->lowerLimit, 500, game->lowerLimit);
 		for (int i = 0; i < game->bullets.size(); i++) {
-			/*if (game->bullets[i].check_collision(game->upperLimit, game->lowerLimit)) {
-				game->bullets.erase(game->bullets.begin() + i);
-			} else {
-				dpy->circle(game->bullets[i].bullet_x, game->bullets[i].bullet_y, game->bulletRadius);
-			}*/
+			dpy->circle(game->bullets[i].bullet_x, game->bullets[i].bullet_y, game->bulletRadius);
 		}
     }
 }

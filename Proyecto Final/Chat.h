@@ -2,23 +2,28 @@
 #include <unistd.h>
 #include <string.h>
 #include <vector>
+#include <cmath>
 #include "Serializable.h"
 #include "Socket.h"
 #include "XLDisplay.h"
-struct Bullet {
+class Bullet {
+public:
     int16_t bullet_x;
     int16_t bullet_y;
-    //int16_t bulletRadius = 5;
-    int16_t bulletSpeed = 5;
-    //std::string name;
+    int16_t bulletRadius = 5;
+    int16_t bulletSpeed = 1;
     int16_t player; // 0 es player1 / 1 es player2
     Bullet(int16_t x, int16_t y, int16_t player_) {
         bullet_x = x;
         bullet_y = y;
         player = player_;
     }
-    void update_bullet() {
-        bullet_y += bulletSpeed;
+    void update() {
+        if (!player) {
+            bullet_y += bulletSpeed;
+        } else {
+            bullet_y -= bulletSpeed;
+        }
     }
     bool check_collision(int16_t border_up, int16_t border_down) {
         if (bullet_y <= border_up || bullet_y >= border_down) {
@@ -29,7 +34,7 @@ struct Bullet {
 };
 class Game : public Serializable {
 public:
-    static const size_t SIZE = sizeof(int16_t) * 4;
+    static const size_t SIZE = sizeof(int16_t) * 7;
     int16_t x1 = 250;
     int16_t y1 = 50;
     int16_t x2 = 250;
@@ -38,9 +43,7 @@ public:
     int16_t lowerLimit = 495;
     int16_t playerRadius = 20;
     int16_t bulletRadius = 5;
-    //int16_t bulletSpeed = 5;
     std::vector<Bullet> bullets;
-    //std::vector<std::pair<int16_t, int16_t>> bullets;
     Game() {};
     void movePlayer(bool player, int16_t x, int16_t y) {
         if (!player) {  // Jugador 1
@@ -62,6 +65,7 @@ public:
     void playerHit(bool player) {
         if (!player) {
             upperLimit += 50;
+            
             // El limite empuja al jugador
             if (y1 - playerRadius < upperLimit) {
                 y1 = upperLimit + playerRadius;
@@ -73,8 +77,8 @@ public:
         } else {
             lowerLimit -= 50;
             // El limite empuja al jugador
-            if (y1 + playerRadius > lowerLimit) {
-                y1 = lowerLimit - playerRadius;
+            if (y2 + playerRadius > lowerLimit) {
+                y2 = lowerLimit - playerRadius;
                 // El jugador pasa la linea del centro
                 if (y2 - playerRadius <= 250) {
                     std::cout << "PIERDE EL JUGADOR 2\n";
@@ -82,18 +86,27 @@ public:
             }
         }
     }
-    bool bullet_collides_player(Bullet bull) {
-        if(bull.player == 0 && bull.bullet_x == x1 && bull.bullet_y == y1) {
-            return true;
-        }
-        if (bull.player == 1 && bull.bullet_x == x2 && bull.bullet_y == y2) {
-            return true;
-        }
-        return false;
+    int bullet_collides_player(Bullet bull) {
+        // Choca con el jugador 1
+        int16_t dist = std::sqrt(
+            std::abs(bull.bullet_x - x1) * std::abs(bull.bullet_x - x1) +
+            std::abs(bull.bullet_y - y1) * std::abs(bull.bullet_y - y1)
+        );
+        if (dist < playerRadius + bulletRadius) { return 0; }
+        // Choca con el jugador 2
+        dist = std::sqrt(
+            std::abs(bull.bullet_x - x2) * std::abs(bull.bullet_x - x2) +
+            std::abs(bull.bullet_y - y2) * std::abs(bull.bullet_y - y2)
+        );
+        if (dist < playerRadius + bulletRadius) { return 1; }
+        // No choca
+        return -1;
     }
     void to_bin() {
+        // Reserva el tamaño de 7 enteros + el del array de bullets
         size_t bulletsSize = bullets.size() * sizeof(int16_t) * 2;
         alloc_data(SIZE + bulletsSize);
+        
         char* dt = _data;
         memcpy(dt, &x1, sizeof(int16_t));                                          
         dt += sizeof(int16_t); 
@@ -107,6 +120,7 @@ public:
         dt += sizeof(int16_t); 
         memcpy(dt, &lowerLimit, sizeof(int16_t));
         dt += sizeof(int16_t);
+        
         int16_t s = bullets.size();
         memcpy(dt, &s, sizeof(int16_t));
         for (int i = 0; i < bullets.size(); i++) {
@@ -114,8 +128,6 @@ public:
             memcpy(dt, &bullets[i].bullet_x, sizeof(int16_t));
             dt += sizeof(int16_t); 
             memcpy(dt, &bullets[i].bullet_y, sizeof(int16_t));
-            dt += sizeof(int16_t);
-            memcpy(dt, &bullets[i].player, sizeof(int16_t));
         }
     }
     int from_bin(char * bobj) {
@@ -133,17 +145,15 @@ public:
         int16_t s;
         bobj += sizeof(int16_t);
         memcpy(&s, bobj, sizeof(int16_t));
+        bullets.clear();
         for (int i = 0; i < s; i++) {
             int16_t x;
             int16_t y;
-            int16_t player;
             bobj += sizeof(int16_t); 
             memcpy(&x, bobj, sizeof(int16_t));
             bobj += sizeof(int16_t); 
             memcpy(&y, bobj, sizeof(int16_t));
-            bobj += sizeof(int16_t);
-            memcpy(&player, bobj, sizeof(int16_t));
-            Bullet bull(x, y, player);
+            Bullet bull(x, y, 0);
             bullets.push_back(bull);
         }
         return 0;
@@ -182,14 +192,19 @@ public:
     void update_thread() {
         while(true) {
             usleep(10000);
+            
             for (int i = 0; i < game->bullets.size(); i++) {
-                game->bullets[i].update_bullet();
+                game->bullets[i].update();
                 if (game->bullets[i].check_collision(game->upperLimit, game->lowerLimit)) {
                     game->bullets.erase(game->bullets.begin() + i);
                 }
-                if (game->bullet_collides_player(game->bullets[i])) {
+                if (game->bullet_collides_player(game->bullets[i]) == 0) {
                     game->bullets.erase(game->bullets.begin() + i);
-                    std::cout << "Player " << game->bullets[i].player << " hit\n";
+                    game->playerHit(0);
+                }
+                if (game->bullet_collides_player(game->bullets[i]) == 1) {
+                    game->bullets.erase(game->bullets.begin() + i);
+                    game->playerHit(1);
                 }
             }
             if (client1 != nullptr) {
@@ -198,15 +213,9 @@ public:
             if (client2 != nullptr) {
                 socket.send(*game, *client2);
             }
-            /*for (int i = 0; i < game->bullets.size(); i++) {
-                game->bullets[i].update_bullet();
-                if (game->bullets[i].check_collision(game->upperLimit, game->lowerLimit)) {
-                    game->bullets.erase(game->bullets.begin() + i);
-                }
-		    }*/
         }
     }
-    private:
+private:
     Socket socket;
     Game* game;
     Socket* client1 = nullptr;
