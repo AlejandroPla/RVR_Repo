@@ -61,11 +61,13 @@ void ChatServer::do_messages()
 			break;
 			case ChatMessage::SHOOT:
 				if (message.nick == player1) {
-					std::cout << "player1 shoots\n";
-					int16_t x = game->x1;
-					int16_t y = game->y1 + game->playerRadius + game->bulletRadius;
-					Bullet bull(x, y);
-					game->bullets.push_back(bull);
+					if(game->bullets.size() < 2) {
+						std::cout << "player1 shoots\n";
+						int16_t x = game->x1;
+						int16_t y = game->y1 + game->playerRadius + game->bulletRadius;
+						Bullet bull(x, y, 0);
+						game->bullets.push_back(bull);
+					}
 				} else if (message.nick == player2) {
 					/*game->bullets.push_back(std::pair<int16_t, int16_t>(
 						game->x2, game->y2 - game->playerRadius - game->bulletRadius)
@@ -166,13 +168,11 @@ void ChatClient::net_thread()
 		dpy->line(0, game->upperLimit, 500, game->upperLimit);
 		dpy->line(0, game->lowerLimit, 500, game->lowerLimit);
 		for (int i = 0; i < game->bullets.size(); i++) {
-            game->bullets[i].update_bullet();
-			if (game->bullets[i].check_collision(game->upperLimit, game->lowerLimit)) {
-				std::cout << "borrando\n";
+			/*if (game->bullets[i].check_collision(game->upperLimit, game->lowerLimit)) {
 				game->bullets.erase(game->bullets.begin() + i);
 			} else {
 				dpy->circle(game->bullets[i].bullet_x, game->bullets[i].bullet_y, game->bulletRadius);
-			}
+			}*/
 		}
     }
 }

@@ -10,13 +10,14 @@ struct Bullet {
     int16_t bullet_y;
     //int16_t bulletRadius = 5;
     int16_t bulletSpeed = 5;
-    std::string name;
-    Bullet(int16_t x, int16_t y) {
+    //std::string name;
+    int16_t player; // 0 es player1 / 1 es player2
+    Bullet(int16_t x, int16_t y, int16_t player_) {
         bullet_x = x;
         bullet_y = y;
+        player = player_;
     }
     void update_bullet() {
-        std::cout << bullet_x << " " << bullet_y << "\n";
         bullet_y += bulletSpeed;
     }
     bool check_collision(int16_t border_up, int16_t border_down) {
@@ -81,6 +82,15 @@ public:
             }
         }
     }
+    bool bullet_collides_player(Bullet bull) {
+        if(bull.player == 0 && bull.bullet_x == x1 && bull.bullet_y == y1) {
+            return true;
+        }
+        if (bull.player == 1 && bull.bullet_x == x2 && bull.bullet_y == y2) {
+            return true;
+        }
+        return false;
+    }
     void to_bin() {
         size_t bulletsSize = bullets.size() * sizeof(int16_t) * 2;
         alloc_data(SIZE + bulletsSize);
@@ -104,10 +114,8 @@ public:
             memcpy(dt, &bullets[i].bullet_x, sizeof(int16_t));
             dt += sizeof(int16_t); 
             memcpy(dt, &bullets[i].bullet_y, sizeof(int16_t));
-            /*for (unsigned int j = 0; j < 7 && j < bullets[i].name.length(); j++, dt++) {
-                *dt = bullets[i].name[j];
-            }
-            std::cout << "sale de to bin\n";*/
+            dt += sizeof(int16_t);
+            memcpy(dt, &bullets[i].player, sizeof(int16_t));
         }
     }
     int from_bin(char * bobj) {
@@ -119,7 +127,7 @@ public:
         bobj += sizeof(int16_t);
         memcpy(&y2, bobj, sizeof(int16_t));
         bobj += sizeof(int16_t);
-         memcpy(&upperLimit, bobj, sizeof(int16_t));
+        memcpy(&upperLimit, bobj, sizeof(int16_t));
         bobj += sizeof(int16_t);
         memcpy(&lowerLimit, bobj, sizeof(int16_t));
         int16_t s;
@@ -128,13 +136,14 @@ public:
         for (int i = 0; i < s; i++) {
             int16_t x;
             int16_t y;
+            int16_t player;
             bobj += sizeof(int16_t); 
             memcpy(&x, bobj, sizeof(int16_t));
             bobj += sizeof(int16_t); 
             memcpy(&y, bobj, sizeof(int16_t));
-            //char * _nick = bobj + sizeof(uint8_t);
-            //std::string n(_nick, 8);
-            Bullet bull(x, y);
+            bobj += sizeof(int16_t);
+            memcpy(&player, bobj, sizeof(int16_t));
+            Bullet bull(x, y, player);
             bullets.push_back(bull);
         }
         return 0;
@@ -173,6 +182,16 @@ public:
     void update_thread() {
         while(true) {
             usleep(10000);
+            for (int i = 0; i < game->bullets.size(); i++) {
+                game->bullets[i].update_bullet();
+                if (game->bullets[i].check_collision(game->upperLimit, game->lowerLimit)) {
+                    game->bullets.erase(game->bullets.begin() + i);
+                }
+                if (game->bullet_collides_player(game->bullets[i])) {
+                    game->bullets.erase(game->bullets.begin() + i);
+                    std::cout << "Player " << game->bullets[i].player << " hit\n";
+                }
+            }
             if (client1 != nullptr) {
                 socket.send(*game, *client1);
             }
