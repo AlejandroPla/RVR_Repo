@@ -42,11 +42,10 @@ void Client::input_thread() {
 				exit = true;
 			break;
 		}
-    } while (!exit);
+    } while (!game->game_over() || !exit);
 }
 void Client::net_thread() {
-    while(!exit)
-    {
+    while(!game->game_over()) {
 		socket.recv(*game);
 		dpy->clear();
 		// Players
@@ -54,6 +53,12 @@ void Client::net_thread() {
 		dpy->circle(game->x1, game->y1, game->playerRadius);
 		dpy->set_color(XLDisplay::GREEN);
 		dpy->circle(game->x2, game->y2, game->playerRadius);
+		// Lives
+	    dpy->set_color(XLDisplay::RED);
+		std::string s1 = "Player 1: " + std::to_string(game->player1Lives);
+		std::string s2 = "Player 2: " + std::to_string(game->player2Lives);
+	    dpy->text(50, 20, s1);
+		dpy->text(350, 480, s2);
 		// Middle line
 		dpy->set_color(XLDisplay::RED);
 		dpy->line(0, 250, 500, 250);
