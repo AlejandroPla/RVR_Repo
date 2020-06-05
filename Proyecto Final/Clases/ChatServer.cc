@@ -4,18 +4,16 @@
 #include <signal.h>
 #include "Serializable.h"
 #include "Socket.h"
-#include "Chat.h"
-extern "C" void * _server_thread(void *arg)
-{
-    ChatServer * server = static_cast<ChatServer *>(arg);
+#include "Server.h"
+extern "C" void * _server_thread(void *arg) {
+    Server * server = static_cast<Server *>(arg);
     server->update_thread();
     return 0;
 }
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     sigset_t waitset;
-    int      sig;
-    ChatServer es(argv[1], argv[2]);
+    int sig;
+    Server es(argv[1], argv[2]);
     pthread_attr_t attr;
     pthread_t id;
     pthread_attr_init(&attr);
