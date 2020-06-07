@@ -20,6 +20,18 @@ void Game::movePlayer(bool player, int16_t x, int16_t y) {
         }
     }
 }
+void Game::PlayerOutOfBounds() {
+    if (y1 + playerRadius >= 250) {
+        upperLimit += 50;
+        y1 = upperLimit + playerRadius;
+        player1Lives--;
+    }
+    if (y2 - playerRadius <= 250) {
+        lowerLimit -= 50;
+        y2 = lowerLimit - playerRadius;
+        player2Lives--;
+    }
+}
 void Game::playerHit(bool player) {
     if (!player) {
         upperLimit += 50;
@@ -28,20 +40,19 @@ void Game::playerHit(bool player) {
             y1 = upperLimit + playerRadius;
             player1Lives--;
             // El jugador pasa la linea del centro
-            if (y1 + playerRadius >= 250) {
-                player1Lives = 0;
-            }
+            /*if (y1 + playerRadius >= 250) {
+                player1Lives--;
+            }*/
         }
     } else {
-        lowerLimit -= 50;
         // El limite empuja al jugador
         if (y2 + playerRadius > lowerLimit) {
             y2 = lowerLimit - playerRadius;
             player2Lives--;
             // El jugador pasa la linea del centro
-            if (y2 - playerRadius <= 250) {
-                player2Lives = 0;
-            }
+            /*if (y2 - playerRadius <= 250) {
+                player2Lives--;
+            }*/
         }
     }
 }
