@@ -5,7 +5,7 @@
 #include "XLDisplay.h"
 extern "C" void * _client_thread(void *arg) {
     Client * server = static_cast<Client *>(arg);
-    server->net_thread();
+    server->input_thread();
     return 0;
 }
 int main(int argc, char **argv) {
@@ -17,5 +17,5 @@ int main(int argc, char **argv) {
     pthread_create(&id, &attr, _client_thread, static_cast<void *>(&ec));
     XLDisplay::init(500, 500, "Drone Duel");
     ec.login();
-    ec.input_thread();
+    ec.net_thread();
 }

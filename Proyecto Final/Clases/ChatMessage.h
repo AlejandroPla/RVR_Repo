@@ -12,7 +12,8 @@ public:
         DOWN = 3,
         LEFT = 4,
         RIGHT = 5,
-        SHOOT = 6
+        SHOOT = 6,
+        RESET = 7
     };
 	ChatMessage(){};
     ChatMessage(const std::string& n) : nick(n) {};

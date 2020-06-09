@@ -3,6 +3,7 @@
 #include <string>
 #include <unistd.h>
 #include "Game.h"
+#include <iostream>
 void Game::movePlayer(bool player, int16_t x, int16_t y) {
     if (!player) {  // Jugador 1
         if (x1 + x + playerRadius <= 500 && x1 + x - playerRadius >= 0) {
@@ -11,6 +12,11 @@ void Game::movePlayer(bool player, int16_t x, int16_t y) {
         if (y1 + y - playerRadius >= upperLimit) {
             y1 += y;
         }
+        if (y1 + playerRadius >= 250) {
+            player1Lives--;
+            x1 = 250;
+            y1 = 50;
+        }
     } else { // Jugador 2
         if (x2 + x + playerRadius <= 500 && x2 + x - playerRadius >= 0) {
             x2 += x;
@@ -18,18 +24,11 @@ void Game::movePlayer(bool player, int16_t x, int16_t y) {
         if (y2 + y + playerRadius <= lowerLimit) {
             y2 += y;
         }
-    }
-}
-void Game::PlayerOutOfBounds() {
-    if (y1 + playerRadius >= 250) {
-        upperLimit += 50;
-        y1 = upperLimit + playerRadius;
-        player1Lives--;
-    }
-    if (y2 - playerRadius <= 250) {
-        lowerLimit -= 50;
-        y2 = lowerLimit - playerRadius;
-        player2Lives--;
+        if (y2 - playerRadius <= 250) {
+            player2Lives--;
+            x2 = 250;
+            y2 = 450;
+        }
     }
 }
 void Game::playerHit(bool player) {
@@ -38,13 +37,24 @@ void Game::playerHit(bool player) {
         // El limite empuja al jugador
         if (y1 - playerRadius < upperLimit) {
             y1 = upperLimit + playerRadius;
-            player1Lives--;
+            if (y1 + playerRadius >= 250) {
+                player1Lives--;
+                x1 = 250;
+                y1 = 50;
+                upperLimit = 5;
+            }
         }
     } else {
         // El limite empuja al jugador
+        lowerLimit -= 50;
         if (y2 + playerRadius > lowerLimit) {
             y2 = lowerLimit - playerRadius;
-            player2Lives--;
+            if (y2 - playerRadius <= 250) {
+                player2Lives--;
+                x2 = 250;
+                y2 = 450;
+                lowerLimit = 5;
+            }
         }
     }
 }
@@ -127,15 +137,24 @@ int Game::from_bin(char * bobj) {
     return 0;
 };
 bool Game::game_over() {
-    if (player1Lives == 0) {
-        printf("PIERDE EL JUGADOR 1\n");
+    if (player1Lives <= 0) {
         winning_player = "JUGADOR 2";
         return true;
     }
-    else if (player2Lives == 0) {
-        printf("PIERDE EL JUGADOR 2\n");
+    else if (player2Lives <= 0) {
         winning_player = "JUGADOR 1";
         return true;
     }
     return false;
+}
+void Game::reset() {
+    bullets.clear();
+    player1Lives = 3;
+    player2Lives = 3;
+    x1 = 250;
+    y1 = 50;
+    x2 = 250;
+    y2 = 450;
+    upperLimit = 5;
+    lowerLimit = 495;
 }
