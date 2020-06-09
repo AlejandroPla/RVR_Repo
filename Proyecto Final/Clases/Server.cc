@@ -76,8 +76,8 @@ void Server::do_messages() {
 }
 void Server::update_thread() {
 	while(true) {
-		nanosleep(&time1, &time2);
-		//usleep(10000);
+		//nanosleep(&time1, &time2);
+		usleep(10000);
 		for (int i = 0; i < game->bullets.size(); i++) {
 			game->bullets[i].update();
 			if (game->bullets[i].check_collision(game->upperLimit, game->lowerLimit)) {

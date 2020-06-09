@@ -69,5 +69,13 @@ void Client::net_thread() {
 		for (int i = 0; i < game->bullets.size(); i++) {
 			dpy->circle(game->bullets[i].bullet_x, game->bullets[i].bullet_y, game->bulletRadius);
 		}
+		if (game->game_over()) {
+			dpy->clear();
+			dpy->set_color(XLDisplay::RED);
+			std::string winner = "Gana " + game->winning_player;
+			dpy->text(250, 250, winner);
+			dpy->flush();
+			sleep(1);
+		}
     }
 }

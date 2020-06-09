@@ -25,4 +25,5 @@ public:
     int16_t player1Lives = 5;
     int16_t player2Lives = 5;
     std::vector<Bullet> bullets;
+    std::string winning_player;
 };

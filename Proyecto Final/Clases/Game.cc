@@ -39,20 +39,12 @@ void Game::playerHit(bool player) {
         if (y1 - playerRadius < upperLimit) {
             y1 = upperLimit + playerRadius;
             player1Lives--;
-            // El jugador pasa la linea del centro
-            /*if (y1 + playerRadius >= 250) {
-                player1Lives--;
-            }*/
         }
     } else {
         // El limite empuja al jugador
         if (y2 + playerRadius > lowerLimit) {
             y2 = lowerLimit - playerRadius;
             player2Lives--;
-            // El jugador pasa la linea del centro
-            /*if (y2 - playerRadius <= 250) {
-                player2Lives--;
-            }*/
         }
     }
 }
@@ -137,10 +129,12 @@ int Game::from_bin(char * bobj) {
 bool Game::game_over() {
     if (player1Lives == 0) {
         printf("PIERDE EL JUGADOR 1\n");
+        winning_player = "JUGADOR 2";
         return true;
     }
     else if (player2Lives == 0) {
         printf("PIERDE EL JUGADOR 2\n");
+        winning_player = "JUGADOR 1";
         return true;
     }
     return false;
