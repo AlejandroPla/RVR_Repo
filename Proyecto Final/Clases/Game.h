@@ -1,24 +1,24 @@
 #include <vector>
 #include "Bullet.h"
+#include "Player.h"
 #include "Serializable.h"
 class Game : public Serializable {
 public:
     // Variables
-    static const size_t SIZE = sizeof(int16_t) * 9;
-    int16_t x1 = 250;
-    int16_t y1 = 50;
-    int16_t x2 = 250;
-    int16_t y2 = 450;
+    static const size_t SIZE = sizeof(int16_t) * 8 + sizeof(Player) * 2;//9;
+    Player* player1;
+    Player* player2;
     int16_t upperLimit = 5;
     int16_t lowerLimit = 495;
     int16_t playerRadius = 20;
     int16_t bulletRadius = 5;
-    int16_t player1Lives = 3;
-    int16_t player2Lives = 3;
     std::vector<Bullet> bullets;
     std::string winning_player;
-    Game() {};
     // Metodos
+    Game() {
+        player1 = new Player(250, 50);
+        player2 = new Player(250, 450);
+    };
 	void movePlayer(bool player, int16_t x, int16_t y);
 	void playerHit(bool player);
 	int bullet_collides_player(Bullet bull);

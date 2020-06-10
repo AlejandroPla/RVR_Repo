@@ -6,68 +6,68 @@ void Server::do_messages() {
 		socket.recv(message, sdMessage);
 		switch(message.type) {
 			case ChatMessage::UP:
-				if (message.nick == player1) {
+				if (message.nick == name_player1) {
 					game->movePlayer(false, 0, -10);
-				} else if (message.nick == player2) {
+				} else if (message.nick == name_player2) {
 					game->movePlayer(true, 0, -10);
 				}			
 			break;
-            case ChatMessage::DOWN:
-				if (message.nick == player1) {
+			case ChatMessage::DOWN:
+				if (message.nick == name_player1) {
 					game->movePlayer(false, 0, 10);
-				} else if (message.nick == player2) {
+				} else if (message.nick == name_player2) {
 					game->movePlayer(true, 0, 10);
 				}			
 			break;
 			case ChatMessage::LEFT:
-				if (message.nick == player1) {
+				if (message.nick == name_player1) {
 					game->movePlayer(false, -10, 0);
-				} else if (message.nick == player2) {
+				} else if (message.nick == name_player2) {
 					game->movePlayer(true, -10, 0);
 				}		
 			break;
-            case ChatMessage::RIGHT:
-				if (message.nick == player1) {
+			case ChatMessage::RIGHT:
+				if (message.nick == name_player1) {
 					game->movePlayer(false, 10, 0);
-				} else if (message.nick == player2) {
+				} else if (message.nick == name_player2) {
 					game->movePlayer(true, 10, 0);
 				}			
 			break;
-            case ChatMessage::SHOOT:
+			case ChatMessage::SHOOT:
 				int16_t x, y;
-				if (message.nick == player1) {
-					x = game->x1;
-					y = game->y1 + game->playerRadius + game->bulletRadius;
+				if (message.nick == name_player1) {
+					x = game->player1->pos_x;
+					y = game->player1->pos_y + game->playerRadius + game->bulletRadius;
 					Bullet b1(x, y, 0);
 					game->bullets.push_back(b1);
-				} else if (message.nick == player2) {
-					x = game->x2;
-					y = game->y2 - game->playerRadius - game->bulletRadius;
+				} else if (message.nick == name_player2) {
+					x = game->player2->pos_x;
+					y = game->player2->pos_y - game->playerRadius - game->bulletRadius;
 					Bullet b2(x, y, 1);
 					game->bullets.push_back(b2);
 				}			
 			break;
-            case ChatMessage::LOGIN:
+			case ChatMessage::LOGIN:
 				if (client1 == nullptr) {
 					client1 = sdMessage;
-					player1 = message.nick;
+					name_player1 = message.nick;
 					std::cout << "Player 1 (" << *sdMessage << ") logged in\n";
 				} else if (client2 == nullptr) {
 					client2 = sdMessage;
-					player2 = message.nick;
+					name_player2 = message.nick;
 					std::cout << "Player 2 (" << *sdMessage << ") logged in\n";
 				} else {
 					std::cout << *sdMessage << " tried to connect but lobby is full\n";
 				}
 			break;
-            case ChatMessage::LOGOUT:
-				if(message.nick == player1) {
+			case ChatMessage::LOGOUT:
+				if(message.nick == name_player1) {
 					client1 = nullptr;
-					player1 = "";
+					name_player1 = "";
 					std::cout << "Player 1 (" << *sdMessage << ") logged out\n";
-				} else if(message.nick == player2) {
+				} else if(message.nick == name_player2) {
 					client2 = nullptr;
-					player2 = "";
+					name_player2 = "";
 					std::cout << "Player 2 (" << *sdMessage << ") logged out\n";
 				}
 			break;
@@ -95,16 +95,13 @@ void Server::check_collisions() {
 }
 void Server::update_thread() {
 	while(true) {
-		//nanosleep(&time1, &time2);
 		usleep(10000);
-		
 		if (!game->game_over()) {
 			check_collisions();
 		}
 		if (client1 != nullptr) {
 			socket.send(*game, *client1);
 		}
-		
 		if (client2 != nullptr) {
 			socket.send(*game, *client2);
 		}
