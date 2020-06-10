@@ -23,7 +23,7 @@ void Client::input_thread() {
 					socket.send(em, socket);
 				}
 			break;
-			case 'a':
+            case 'a':
 				if (!game->game_over()) {
 					em.type = ChatMessage::LEFT;
 					socket.send(em, socket);
@@ -35,7 +35,7 @@ void Client::input_thread() {
 					socket.send(em, socket);
 				}
 			break;
-			case 'd':
+            case 'd':
 				if (!game->game_over()) {
 					em.type = ChatMessage::RIGHT;
 					socket.send(em, socket);
@@ -47,7 +47,7 @@ void Client::input_thread() {
 					socket.send(em, socket);
 				}
 			break;
-			case 'q':
+            case 'q':
 				logout();
 				exit = true;
 			break;
@@ -60,9 +60,16 @@ void Client::input_thread() {
 		}
     } while (!exit);
 }
+
 void Client::net_thread() {
     while(!exit) {
 		socket.recv(*game);
+    }
+}
+
+void Client::render_thread() {
+    while(!exit) {
+        usleep(1000);
 		dpy->clear();
 		if (!game->game_over()) {
 			// Players
@@ -71,7 +78,7 @@ void Client::net_thread() {
 			dpy->set_color(XLDisplay::GREEN);
 			dpy->circle(game->player2->pos_x, game->player2->pos_y, game->playerRadius);
 			// Lives
-			dpy->set_color(XLDisplay::RED);
+            dpy->set_color(XLDisplay::RED);
 			std::string s1 = "Player 1: " + std::to_string(game->player1->lives);
 			std::string s2 = "Player 2: " + std::to_string(game->player2->lives);
 			dpy->text(50, 20, s1);
@@ -80,7 +87,7 @@ void Client::net_thread() {
 			dpy->set_color(XLDisplay::RED);
 			dpy->line(0, 250, 500, 250);
 			// Upper and lower limits
-			dpy->set_color(XLDisplay::BLACK);
+            dpy->set_color(XLDisplay::BLACK);
 			dpy->line(0, game->upperLimit, 500, game->upperLimit);
 			dpy->line(0, game->lowerLimit, 500, game->lowerLimit);
 			for (int i = 0; i < game->bullets.size(); i++) {
@@ -92,5 +99,6 @@ void Client::net_thread() {
 			dpy->text(200, 250, winner);
 			dpy->text(200, 260, "Oprime R para reiniciar");
 		}
+        dpy->flush();
     }
 }

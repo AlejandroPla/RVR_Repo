@@ -1,7 +1,19 @@
 #include <vector>
 #include "Bullet.h"
-#include "Player.h"
 #include "Serializable.h"
+
+class Player {
+public:
+    int16_t pos_x;
+    int16_t pos_y;
+    int16_t lives = 3;
+    
+    Player(int16_t x, int16_t y) {
+        pos_x = x;
+        pos_y = y;
+    }
+};
+
 class Game : public Serializable {
 public:
     // Variables

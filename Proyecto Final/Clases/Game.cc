@@ -16,21 +16,24 @@ void Game::movePlayer(bool player, int16_t x, int16_t y) {
             player1->lives--;
             player1->pos_x = 250;
             player1->pos_y = 50;
+            upperLimit = 5;
         }
     } else { // Jugador 2
         if (player2->pos_x + x + playerRadius <= 500 && player2->pos_x + x - playerRadius >= 0) {
             player2->pos_x += x;
         }
-        if (player2->pos_y + y - playerRadius <= lowerLimit) {
+        if (player2->pos_y + y + playerRadius <= lowerLimit) {
             player2->pos_y += y;
         }
-        if (player2->pos_y + playerRadius <= 250) {
+        if (player2->pos_y - playerRadius <= 250) {
             player2->lives--;
             player2->pos_x = 250;
             player2->pos_y = 450;
+            lowerLimit = 495;
         }
     }
 }
+
 void Game::playerHit(bool player) {
     if (!player) {
         upperLimit += 50;
@@ -58,6 +61,7 @@ void Game::playerHit(bool player) {
         }
     }
 }
+
 int Game::bullet_collides_player(Bullet bull) {
     // Choca con el jugador 1
     int16_t dist = std::sqrt(
@@ -74,6 +78,7 @@ int Game::bullet_collides_player(Bullet bull) {
     // No choca
     return -1;
 }
+
 void Game::to_bin() {
     // Reserva el tamaño de 9 enteros + el del array de bullets
     size_t bulletsSize = bullets.size() * sizeof(int16_t) * 2;
@@ -104,6 +109,7 @@ void Game::to_bin() {
         memcpy(dt, &bullets[i].bullet_y, sizeof(int16_t));
     }
 }
+
 int Game::from_bin(char * bobj) {
     int16_t x1, y1, x2, y2;
     memcpy(&x1, bobj, sizeof(int16_t));
@@ -139,6 +145,7 @@ int Game::from_bin(char * bobj) {
     }
     return 0;
 };
+
 bool Game::game_over() {
     if (player1->lives <= 0) {
         winning_player = "JUGADOR 2";
@@ -151,6 +158,7 @@ bool Game::game_over() {
 
     return false;
 }
+
 void Game::reset() {
     bullets.clear();
     player1->lives = 3;

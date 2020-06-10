@@ -24,4 +24,5 @@ public:
     void logout();
     void input_thread();
     void net_thread();
+    void render_thread();
 };
