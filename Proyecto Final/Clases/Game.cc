@@ -125,7 +125,6 @@ int Game::from_bin(char * bobj) {
     memcpy(&player2->lives, bobj, sizeof(int16_t));
     bobj += sizeof(int16_t);
     int16_t s;
-    bobj += sizeof(int16_t);
     memcpy(&s, bobj, sizeof(int16_t));
     bullets.clear();
     for (int i = 0; i < s; i++) {

@@ -5,7 +5,7 @@
 class Game : public Serializable {
 public:
     // Variables
-    static const size_t SIZE = sizeof(int16_t) * 8 + sizeof(Player) * 2;//9;
+    static const size_t SIZE = sizeof(int16_t) * 8 + sizeof(Player) * 2;
     Player* player1;
     Player* player2;
     int16_t upperLimit = 5;
