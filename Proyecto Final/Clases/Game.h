@@ -1,18 +1,6 @@
 #include <vector>
-#include "Bullet.h"
+#include "GameObjects.h"
 #include "Serializable.h"
-
-class Player {
-public:
-    int16_t pos_x;
-    int16_t pos_y;
-    int16_t lives = 3;
-    
-    Player(int16_t x, int16_t y) {
-        pos_x = x;
-        pos_y = y;
-    }
-};
 
 class Game : public Serializable {
 public:
@@ -26,11 +14,13 @@ public:
     int16_t bulletRadius = 5;
     std::vector<Bullet> bullets;
     std::string winning_player;
+
     // Metodos
     Game() {
-        player1 = new Player(250, 50);
-        player2 = new Player(250, 450);
+        player1 = new Player(0, 250, 50, playerRadius);
+        player2 = new Player(1, 250, 450, playerRadius);
     };
+
 	void movePlayer(bool player, int16_t x, int16_t y);
 	void playerHit(bool player);
 	int bullet_collides_player(Bullet bull);

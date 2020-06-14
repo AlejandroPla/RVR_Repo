@@ -1,20 +1,23 @@
 #include "Client.h"
+
 void Client::login() {
     std::string msg;
     ChatMessage em(nick);
     em.type = ChatMessage::LOGIN;
     socket.send(em, socket);
 }
+
 void Client::logout() {
 	std::string msg;
     ChatMessage em(nick);
     em.type = ChatMessage::LOGOUT;
     socket.send(em, socket);
 }
+
 void Client::input_thread() {
 	char k;
 	ChatMessage em(nick);
-	do {
+	while (!exit) {
         k = dpy->wait_key();
         switch(k) {
 			case 'w':
@@ -48,17 +51,17 @@ void Client::input_thread() {
 				}
 			break;
             case 'q':
-				logout();
 				exit = true;
+				logout();
 			break;
 			case 'r':
-				if (!game->game_over()) {
+				if (game->game_over()) {
 					em.type = ChatMessage::RESET;
 					socket.send(em, socket);
 				}
 			break;
 		}
-    } while (!exit);
+    }
 }
 
 void Client::net_thread() {
@@ -73,11 +76,9 @@ void Client::render_thread() {
 		dpy->clear();
 		if (!game->game_over()) {
 			// Players
-			dpy->set_color(XLDisplay::BLUE);
-			dpy->circle(game->player1->pos_x, game->player1->pos_y, game->playerRadius);
-			dpy->set_color(XLDisplay::GREEN);
-			dpy->circle(game->player2->pos_x, game->player2->pos_y, game->playerRadius);
-			// Lives
+			game->player1->render();
+			game->player2->render();
+            // Lives
             dpy->set_color(XLDisplay::RED);
 			std::string s1 = "Player 1: " + std::to_string(game->player1->lives);
 			std::string s2 = "Player 2: " + std::to_string(game->player2->lives);
@@ -90,14 +91,15 @@ void Client::render_thread() {
             dpy->set_color(XLDisplay::BLACK);
 			dpy->line(0, game->upperLimit, 500, game->upperLimit);
 			dpy->line(0, game->lowerLimit, 500, game->lowerLimit);
+            // Bullets
 			for (int i = 0; i < game->bullets.size(); i++) {
-				dpy->circle(game->bullets[i].bullet_x, game->bullets[i].bullet_y, game->bulletRadius);
+				game->bullets[i].render();
 			}
 		} else {
 			dpy->set_color(XLDisplay::RED);
 			std::string winner = "Gana " + game->winning_player;
 			dpy->text(200, 250, winner);
-			dpy->text(200, 260, "Oprime R para reiniciar");
+			dpy->text(200, 260, "Pulsa R para reiniciar");
 		}
         dpy->flush();
     }

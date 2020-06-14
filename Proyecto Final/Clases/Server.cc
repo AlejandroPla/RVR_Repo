@@ -7,43 +7,43 @@ void Server::do_messages() {
 		switch(message.type) {
 			case ChatMessage::UP:
 				if (message.nick == name_player1) {
-					game->movePlayer(false, 0, -10);
+					game->movePlayer(0, 0, -10);
 				} else if (message.nick == name_player2) {
-					game->movePlayer(true, 0, -10);
+					game->movePlayer(1, 0, -10);
 				}			
 			break;
 			case ChatMessage::DOWN:
 				if (message.nick == name_player1) {
-					game->movePlayer(false, 0, 10);
+					game->movePlayer(0, 0, 10);
 				} else if (message.nick == name_player2) {
-					game->movePlayer(true, 0, 10);
+					game->movePlayer(1, 0, 10);
 				}			
 			break;
 			case ChatMessage::LEFT:
 				if (message.nick == name_player1) {
-					game->movePlayer(false, -10, 0);
+					game->movePlayer(0, -10, 0);
 				} else if (message.nick == name_player2) {
-					game->movePlayer(true, -10, 0);
+					game->movePlayer(1, -10, 0);
 				}		
 			break;
 			case ChatMessage::RIGHT:
 				if (message.nick == name_player1) {
-					game->movePlayer(false, 10, 0);
+					game->movePlayer(0, 10, 0);
 				} else if (message.nick == name_player2) {
-					game->movePlayer(true, 10, 0);
+					game->movePlayer(1, 10, 0);
 				}			
 			break;
 			case ChatMessage::SHOOT:
 				int16_t x, y;
 				if (message.nick == name_player1) {
-					x = game->player1->pos_x;
-					y = game->player1->pos_y + game->playerRadius + game->bulletRadius;
-					Bullet b1(x, y, 0);
+					x = game->player1->x;
+					y = game->player1->y + game->playerRadius + game->bulletRadius;
+					Bullet b1(x, y, 0, game->bulletRadius);
 					game->bullets.push_back(b1);
 				} else if (message.nick == name_player2) {
-					x = game->player2->pos_x;
-					y = game->player2->pos_y - game->playerRadius - game->bulletRadius;
-					Bullet b2(x, y, 1);
+					x = game->player2->x;
+					y = game->player2->y - game->playerRadius - game->bulletRadius;
+					Bullet b2(x, y, 1, game->bulletRadius);
 					game->bullets.push_back(b2);
 				}			
 			break;
@@ -77,6 +77,7 @@ void Server::do_messages() {
 		}
     }
 }
+
 void Server::check_collisions() {
 	for (int i = 0; i < game->bullets.size(); i++) {
 		game->bullets[i].update();
@@ -93,6 +94,7 @@ void Server::check_collisions() {
 		}
 	}
 }
+
 void Server::update_thread() {
 	while(true) {
 		usleep(10000);
