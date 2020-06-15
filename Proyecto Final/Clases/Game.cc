@@ -145,7 +145,6 @@ int Game::from_bin(char * bobj) {
         bobj += sizeof(int16_t); 
         memcpy(&y, bobj, sizeof(int16_t));
         Bullet bull(x, y, 0, bulletRadius);
-        bullets.push_back(bull);
         game_objects.push_back(&bull);
     }
     return 0;
