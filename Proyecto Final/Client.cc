@@ -1,4 +1,6 @@
 #include "Client.h"
+#include "Message.h"
+#include <unistd.h>
 
 void Client::login() {
     std::string msg;
@@ -72,29 +74,34 @@ void Client::net_thread() {
 
 void Client::render_thread() {
     while(!exit) {
-        usleep(1000);
+        usleep(10000);
 		dpy->clear();
-		for (int i = 0; i < game->game_objects.size(); i++) {
-			game->game_objects[i]->dpy->clear();
-		}
+
 		if (!game->game_over()) {
-			// Game Objects
-			for (int i = 0; i < game->game_objects.size(); i++) {
-				game->game_objects[i]->render();
-			}
+			// Players
+			game->player1->render();
+			game->player2->render();
+
             // Lives
             dpy->set_color(XLDisplay::RED);
 			std::string s1 = "Player 1: " + std::to_string(game->player1->lives);
 			std::string s2 = "Player 2: " + std::to_string(game->player2->lives);
 			dpy->text(50, 20, s1);
 			dpy->text(350, 480, s2);
+
 			// Middle line
 			dpy->set_color(XLDisplay::RED);
 			dpy->line(0, 250, 500, 250);
+
 			// Upper and lower limits
             dpy->set_color(XLDisplay::BLACK);
 			dpy->line(0, game->upperLimit, 500, game->upperLimit);
 			dpy->line(0, game->lowerLimit, 500, game->lowerLimit);
+			
+            // Bullets
+			for (int i = 0; i < game->bullets.size(); i++) {
+				game->bullets[i].render();
+			}
 		} else {
 			dpy->set_color(XLDisplay::RED);
 			std::string winner = "Gana " + game->winning_player;
@@ -102,8 +109,5 @@ void Client::render_thread() {
 			dpy->text(200, 260, "Pulsa R para reiniciar");
 		}
         dpy->flush();
-		for (int i = 0; i < game->game_objects.size(); i++) {
-			game->game_objects[i]->dpy->flush();
-		}
     }
 }

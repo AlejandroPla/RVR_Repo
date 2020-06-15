@@ -1,4 +1,7 @@
 #include "Server.h"
+#include "Message.h"
+#include <unistd.h>
+
 void Server::do_messages() {
     while (true) {
 		ChatMessage message;
@@ -38,12 +41,12 @@ void Server::do_messages() {
 				if (message.nick == name_player1) {
 					x = game->player1->x;
 					y = game->player1->y + game->playerRadius + game->bulletRadius;
-					Bullet b1(x, y, 0, game->bulletRadius);
+					Bullet b1(x, y, 0, game->bulletRadius, game->bulletSpeed);
 					game->bullets.push_back(b1);
 				} else if (message.nick == name_player2) {
 					x = game->player2->x;
 					y = game->player2->y - game->playerRadius - game->bulletRadius;
-					Bullet b2(x, y, 1, game->bulletRadius);
+					Bullet b2(x, y, 1, game->bulletRadius, game->bulletSpeed);
 					game->bullets.push_back(b2);
 				}			
 			break;
@@ -78,16 +81,22 @@ void Server::do_messages() {
     }
 }
 
-void Server::check_collisions() {
+void Server::updateBullets() {
 	for (int i = 0; i < game->bullets.size(); i++) {
 		game->bullets[i].update();
+
+		// Check border collision
 		if (game->bullets[i].check_collision(game->upperLimit, game->lowerLimit)) {
 			game->bullets.erase(game->bullets.begin() + i);
 		}
+
+		// Check Player1 collision
 		if (game->bullet_collides_player(game->bullets[i]) == 0) {
 			game->bullets.erase(game->bullets.begin() + i);
 			game->playerHit(0);
 		}
+
+		// Check Player2 collision
 		if (game->bullet_collides_player(game->bullets[i]) == 1) {
 			game->bullets.erase(game->bullets.begin() + i);
 			game->playerHit(1);
@@ -98,14 +107,17 @@ void Server::check_collisions() {
 void Server::update_thread() {
 	while(true) {
 		usleep(10000);
-		if (!game->game_over()) {
-			check_collisions();
-		}
-		if (client1 != nullptr) {
+		
+		// Update bullets
+		if (!game->game_over())
+			updateBullets();
+
+		// Update Client1
+		if (client1 != nullptr)
 			socket.send(*game, *client1);
-		}
-		if (client2 != nullptr) {
+
+		// Update Client2
+		if (client2 != nullptr)
 			socket.send(*game, *client2);
-		}
 	}
 }
