@@ -74,10 +74,14 @@ void Client::render_thread() {
     while(!exit) {
         usleep(1000);
 		dpy->clear();
+		for (int i = 0; i < game->game_objects.size(); i++) {
+			game->game_objects[i]->dpy->clear();
+		}
 		if (!game->game_over()) {
-			// Players
-			game->player1->render();
-			game->player2->render();
+			// Game Objects
+			for (int i = 0; i < game->game_objects.size(); i++) {
+				game->game_objects[i]->render();
+			}
             // Lives
             dpy->set_color(XLDisplay::RED);
 			std::string s1 = "Player 1: " + std::to_string(game->player1->lives);
@@ -91,10 +95,6 @@ void Client::render_thread() {
             dpy->set_color(XLDisplay::BLACK);
 			dpy->line(0, game->upperLimit, 500, game->upperLimit);
 			dpy->line(0, game->lowerLimit, 500, game->lowerLimit);
-            // Bullets
-			for (int i = 0; i < game->bullets.size(); i++) {
-				game->bullets[i].render();
-			}
 		} else {
 			dpy->set_color(XLDisplay::RED);
 			std::string winner = "Gana " + game->winning_player;
@@ -102,5 +102,8 @@ void Client::render_thread() {
 			dpy->text(200, 260, "Pulsa R para reiniciar");
 		}
         dpy->flush();
+		for (int i = 0; i < game->game_objects.size(); i++) {
+			game->game_objects[i]->dpy->flush();
+		}
     }
 }

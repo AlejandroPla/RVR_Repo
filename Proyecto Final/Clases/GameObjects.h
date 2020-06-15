@@ -8,8 +8,11 @@ class GameObject {
 public:
     int16_t x;
     int16_t y;
+    XLDisplay* dpy;
 
-    GameObject(int16_t _x, int16_t _y) : x(_x), y(_y) {}
+    GameObject(int16_t _x, int16_t _y) : x(_x), y(_y) {
+        dpy = &XLDisplay::display();
+     }
 
     virtual void render() = 0;
 };
@@ -19,11 +22,8 @@ public:
     int16_t n;
     int16_t radius;
     int16_t lives = 3;
-    XLDisplay* dpy;
     
-    Player(int16_t _n, int16_t _x, int16_t _y, int16_t _r) : GameObject(_x, _y), n(_n), radius(_r) {
-        dpy = &XLDisplay::display();
-    }
+    Player(int16_t _n, int16_t _x, int16_t _y, int16_t _r) : GameObject(_x, _y), n(_n), radius(_r) {}
 
     virtual void render() {
         if (n) {
@@ -41,10 +41,8 @@ public:
     int16_t bulletSpeed = 1;
     int16_t radius;
     int16_t player; // 0 es player1 / 1 es player2
-    XLDisplay* dpy;
 
     Bullet(int16_t _x, int16_t _y, int16_t _player, int16_t _r) : GameObject(_x, _y) {
-        dpy = &XLDisplay::display();
         player = _player;
         radius = _r;
     }
@@ -65,6 +63,7 @@ public:
     }
 
     virtual void render() {
+		dpy->set_color(XLDisplay::BLACK);
         dpy->circle(x, y, radius);
     }
 };
