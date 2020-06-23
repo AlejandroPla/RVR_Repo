@@ -4,51 +4,51 @@
 
 void Client::login() {
     std::string msg;
-    ChatMessage em(nick);
-    em.type = ChatMessage::LOGIN;
+    Message em(nick);
+    em.type = Message::LOGIN;
     socket.send(em, socket);
 }
 
 void Client::logout() {
 	std::string msg;
-    ChatMessage em(nick);
-    em.type = ChatMessage::LOGOUT;
+    Message em(nick);
+    em.type = Message::LOGOUT;
     socket.send(em, socket);
 }
 
 void Client::input_thread() {
 	char k;
-	ChatMessage em(nick);
+	Message em(nick);
 	while (!exit) {
         k = dpy->wait_key();
         switch(k) {
 			case 'w':
 				if (!game->game_over()) {
-					em.type = ChatMessage::UP;
+					em.type = Message::UP;
 					socket.send(em, socket);
 				}
 			break;
-            case 'a':
+			case 'a':
 				if (!game->game_over()) {
-					em.type = ChatMessage::LEFT;
+					em.type = Message::LEFT;
 					socket.send(em, socket);
 				}
 			break;
 			case 's':
 				if (!game->game_over()) {
-					em.type = ChatMessage::DOWN;
+					em.type = Message::DOWN;
 					socket.send(em, socket);
 				}
 			break;
             case 'd':
 				if (!game->game_over()) {
-					em.type = ChatMessage::RIGHT;
+					em.type = Message::RIGHT;
 					socket.send(em, socket);
 				}
 			break;
 			case ' ':
 				if (!game->game_over()) {
-					em.type = ChatMessage::SHOOT;
+					em.type = Message::SHOOT;
 					socket.send(em, socket);
 				}
 			break;
@@ -58,7 +58,7 @@ void Client::input_thread() {
 			break;
 			case 'r':
 				if (game->game_over()) {
-					em.type = ChatMessage::RESET;
+					em.type = Message::RESET;
 					socket.send(em, socket);
 				}
 			break;
@@ -82,7 +82,7 @@ void Client::render_thread() {
 			game->player1->render();
 			game->player2->render();
 
-            // Lives
+			// Lives
             dpy->set_color(XLDisplay::RED);
 			std::string s1 = "Player 1: " + std::to_string(game->player1->lives);
 			std::string s2 = "Player 2: " + std::to_string(game->player2->lives);

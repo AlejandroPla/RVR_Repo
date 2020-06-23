@@ -2,7 +2,8 @@
 #include <string.h>
 #include "Serializable.h"
 #include "Socket.h"
-class ChatMessage: public Serializable {
+
+class Message: public Serializable {
 public:
     static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
     enum MessageType {
@@ -15,8 +16,8 @@ public:
         SHOOT = 6,
         RESET = 7
     };
-	ChatMessage(){};
-    ChatMessage(const std::string& n) : nick(n) {};
+    Message(){};
+    Message(const std::string& n) : nick(n) {};
     void to_bin();
     int from_bin(char * bobj);
     uint8_t type;

@@ -1,5 +1,6 @@
-#include "ChatMessage.h"
-void ChatMessage::to_bin() {
+#include "Message.h"
+
+void Message::to_bin() {
     alloc_data(MESSAGE_SIZE);
     memset(_data, 0, MESSAGE_SIZE);
 	char* dt = _data;
@@ -9,7 +10,8 @@ void ChatMessage::to_bin() {
 		*dt = nick[i];
 	}
 }
-int ChatMessage::from_bin(char * bobj) {
+
+int Message::from_bin(char * bobj) {
     alloc_data(MESSAGE_SIZE);
     memcpy(static_cast<void *>(_data), bobj, MESSAGE_SIZE);
 	type = (uint8_t) *_data;

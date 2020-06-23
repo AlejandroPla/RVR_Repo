@@ -4,39 +4,39 @@
 
 void Server::do_messages() {
     while (true) {
-		ChatMessage message;
+		Message message;
 		Socket* sdMessage;
 		socket.recv(message, sdMessage);
 		switch(message.type) {
-			case ChatMessage::UP:
+			case Message::UP:
 				if (message.nick == name_player1) {
 					game->movePlayer(0, 0, -10);
 				} else if (message.nick == name_player2) {
 					game->movePlayer(1, 0, -10);
 				}			
 			break;
-			case ChatMessage::DOWN:
+			case Message::DOWN:
 				if (message.nick == name_player1) {
 					game->movePlayer(0, 0, 10);
 				} else if (message.nick == name_player2) {
 					game->movePlayer(1, 0, 10);
 				}			
 			break;
-			case ChatMessage::LEFT:
+			case Message::LEFT:
 				if (message.nick == name_player1) {
 					game->movePlayer(0, -10, 0);
 				} else if (message.nick == name_player2) {
 					game->movePlayer(1, -10, 0);
 				}		
 			break;
-			case ChatMessage::RIGHT:
+			case Message::RIGHT:
 				if (message.nick == name_player1) {
 					game->movePlayer(0, 10, 0);
 				} else if (message.nick == name_player2) {
 					game->movePlayer(1, 10, 0);
 				}			
 			break;
-			case ChatMessage::SHOOT:
+			case Message::SHOOT:
 				int16_t x, y;
 				if (message.nick == name_player1) {
 					x = game->player1->x;
@@ -50,7 +50,7 @@ void Server::do_messages() {
 					game->bullets.push_back(b2);
 				}			
 			break;
-			case ChatMessage::LOGIN:
+			case Message::LOGIN:
 				if (client1 == nullptr) {
 					client1 = sdMessage;
 					name_player1 = message.nick;
@@ -63,7 +63,7 @@ void Server::do_messages() {
 					std::cout << *sdMessage << " tried to connect but lobby is full\n";
 				}
 			break;
-			case ChatMessage::LOGOUT:
+			case Message::LOGOUT:
 				if(message.nick == name_player1) {
 					client1 = nullptr;
 					name_player1 = "";
@@ -74,7 +74,7 @@ void Server::do_messages() {
 					std::cout << "Player 2 (" << *sdMessage << ") logged out\n";
 				}
 			break;
-			case ChatMessage::RESET:
+			case Message::RESET:
 				game->reset();
 			break;
 		}
